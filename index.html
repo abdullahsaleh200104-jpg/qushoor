@@ -13,6 +13,8 @@
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" type="image/png" href="./icons/icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --bg:#f3f4ef; --surface:#ffffff; --fg:#1d2a24; --muted:#66726b; --line:#dfe3da;
@@ -96,11 +98,23 @@ td button{padding:2px 10px;font-size:.85rem}
 #remAmt.debt{color:var(--danger)}
 h3{font-size:1rem;margin:16px 0 6px}
 .line{padding:6px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap;font-size:.9rem}
-#invoice{display:none;direction:rtl;font-family:var(--font)}
+#invoice{position:fixed;left:-12000px;top:0;width:1100px;padding:24px;background:#fff;color:#000;direction:rtl;font-family:var(--font);font-size:15px;pointer-events:none}
+#invoice h1{font-size:28px;margin:0 0 6px;color:#000}
+#invoice p{margin:4px 0;color:#000}
+#invoice table{width:100%;min-width:0;border-collapse:collapse;font-size:14px}
+#invoice th,#invoice td{border:1px solid #999;padding:6px 8px;text-align:right;color:#000;white-space:normal}
+#invoice th{background:#e2efe8}
+#invoice .d{color:#b3382c;font-weight:700}
+#invoice .ih{text-align:center;margin-bottom:12px}
+#invoice .ft{margin-top:16px;font-size:13px;text-align:center}
+.btnlink{display:block;flex:1 1 150px;text-align:center;text-decoration:none;font-weight:700;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);padding:10px 16px}
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:100}
+.dlgbox{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:16px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:10px}
+.dlgbox h2{margin:0;font-size:1.1rem}
 @media print{
   html,body{background:#fff!important;color:#000!important;padding:0!important}
   body>*:not(#invoice){display:none!important}
-  #invoice{display:block;color:#000;padding:12px}
+  #invoice{position:static;left:auto;width:auto;display:block;color:#000;padding:12px}
   #invoice table{width:100%;min-width:0;border-collapse:collapse;font-size:12px}
   #invoice th,#invoice td{border:1px solid #999;padding:4px 6px;text-align:right;color:#000}
   #invoice th{background:#e2efe8}
@@ -251,6 +265,9 @@ h3{font-size:1rem;margin:16px 0 6px}
         <tfoot id="foot"></tfoot>
       </table>
     </div>
+    <label style="margin-top:12px">🗑️ وضع المسح (العمليات والأنواع والمستخدمون)
+      <select id="delMode"><option value="admin">🔒 بكلمة سر المدير فقط</option><option value="free">🔓 بدون كلمة سر</option></select>
+    </label>
     <h3>💵 تسديد دين</h3>
     <div class="grid">
       <label>الزبون <select id="payCust"></select></label>
@@ -267,7 +284,8 @@ h3{font-size:1rem;margin:16px 0 6px}
       <label id="invNBox" hidden>عدد العمليات <input id="invN" class="num" inputmode="numeric" placeholder="10" autocomplete="off"></label>
     </div>
     <button class="primary" id="invBtn" type="button">إصدار الفاتورة (حفظ PDF)</button>
-    <p class="tip" style="margin-top:6px">تظهر نافذة الطباعة: اختر «حفظ كـ PDF» كوجهة.</p>
+    <p class="tip" style="margin-top:6px">يُنشأ ملف PDF حقيقي، وتظهر أزرار التنزيل والمشاركة.</p>
+    <div class="actions" id="invOut" hidden></div>
     <div class="actions">
       <button class="primary" style="margin:0" id="export" type="button">تصدير إلى إكسل (ملف)</button>
       <button id="copy" type="button">نسخ ولصق في إكسل</button>
@@ -348,6 +366,16 @@ h3{font-size:1rem;margin:16px 0 6px}
   </div>
 </div>
 
+<div class="dlg" id="dlg" hidden>
+  <div class="dlgbox" role="dialog" aria-modal="true" dir="rtl">
+    <h2 id="dlgT"></h2>
+    <p class="tip" id="dlgM"></p>
+    <input id="dlgPass" type="password" placeholder="كلمة سر المدير" autocomplete="off">
+    <p class="err" id="dlgErr" role="alert" style="color:var(--danger);font-weight:700;min-height:1.4em;margin:0"></p>
+    <div class="actions" style="margin:0"><button class="primary" id="dlgOk" type="button" style="margin:0">تأكيد</button><button id="dlgNo" type="button">إلغاء</button></div>
+  </div>
+</div>
+
 <div id="invoice" aria-hidden="true"></div>
 
 <script>
@@ -356,7 +384,7 @@ h3{font-size:1rem;margin:16px 0 6px}
   var $ = function(id){ return document.getElementById(id); };
   var state = {
     types: ["قشور فستق", "قشور لوز", "قشور جوز", "قشور بندق"],
-    prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], sync: { url: "", key: "", auto: false }
+    prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], delMode: "admin", sync: { url: "", key: "", auto: false }
   };
   try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.types) state = Object.assign(state, s); } catch (e) {}
   var syncT = null;
@@ -482,7 +510,7 @@ h3{font-size:1rem;margin:16px 0 6px}
       var del = document.createElement("button"); del.type = "button"; del.className = "danger small"; del.textContent = "حذف";
       del.addEventListener("click", function(){
         if (state.types.length <= 1) { say("لازم يبقى نوع واحد على الأقل."); return; }
-        state.types.splice(i, 1); save(); renderTypes(); loadPrice();
+        guardDel("حذف النوع «" + t + "»", function(){ var ix = state.types.indexOf(t); if (ix >= 0 && state.types.length > 1) { state.types.splice(ix, 1); save(); renderTypes(); loadPrice(); } });
       });
       row.appendChild(inp); row.appendChild(del); list.appendChild(row);
     });
@@ -592,7 +620,7 @@ h3{font-size:1rem;margin:16px 0 6px}
       });
       var td = document.createElement("td");
       var b = document.createElement("button"); b.type = "button"; b.className = "danger"; b.textContent = "حذف";
-      b.addEventListener("click", function(){ state.rows.splice(realIndex, 1); save(); render(); });
+      b.addEventListener("click", function(){ guardDel("حذف عملية بيع «" + x.customer + "»", function(){ var ix = state.rows.indexOf(x); if (ix >= 0) { state.rows.splice(ix, 1); save(); render(); } }); });
       td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
     });
     $("foot").innerHTML = filtered.length
@@ -616,7 +644,7 @@ h3{font-size:1rem;margin:16px 0 6px}
       b.dataset.sure = "1"; b.textContent = "اضغط للتأكيد";
       setTimeout(function(){ delete b.dataset.sure; b.textContent = "مسح الكل"; }, 3000); return;
     }
-    delete b.dataset.sure; b.textContent = "مسح الكل"; state.rows = []; save(); render(); say("تم مسح القائمة.");
+    delete b.dataset.sure; b.textContent = "مسح الكل"; guardDel("مسح كل المبيعات", function(){ state.rows = []; save(); render(); say("تم مسح القائمة."); });
   });
 
   /* ---------- Export ---------- */
@@ -767,23 +795,64 @@ h3{font-size:1rem;margin:16px 0 6px}
   /* ---------- Invoice (print to PDF) ---------- */
   function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   $("invScope").addEventListener("change", function(){ var v = this.value; $("invCustBox").hidden = v !== "cust"; $("invNBox").hidden = v !== "n"; });
-  $("invBtn").addEventListener("click", function(){
+  $("invBtn").addEventListener("click", async function(){
     if (!licensed) return;
-    var sc = $("invScope").value, rows = state.rows.slice(), title = "فاتورة كامل المبيعات", showC = true;
-    if (sc === "cust") { var cn = $("invCust").value; rows = rows.filter(function(x){ return x.customer === cn; }); title = "فاتورة الزبون: " + cn; showC = false; }
-    else if (sc === "n") { var n = Math.max(1, Math.floor(num($("invN").value)) || 1); rows = rows.slice(-n); title = "فاتورة آخر " + rows.length + " عملية"; }
+    var sc = $("invScope").value, rows = state.rows.slice(), title = "فاتورة كامل المبيعات", showC = true, tag = "كامل-المبيعات";
+    if (sc === "cust") { var cn = $("invCust").value; rows = rows.filter(function(x){ return x.customer === cn; }); title = "فاتورة الزبون: " + cn; showC = false; tag = cn.replace(/[\\\/:*?"<>|\s]+/g, "-"); }
+    else if (sc === "n") { var n = Math.max(1, Math.floor(num($("invN").value)) || 1); rows = rows.slice(-n); title = "فاتورة آخر " + rows.length + " عملية"; tag = "آخر-" + rows.length; }
     if (!rows.length) { say("لا توجد مبيعات لهذه الفاتورة."); return; }
-    var sT = 0, sD = 0, sA = 0, sP = 0, sR = 0;
-    var h = '<div class="ih"><h1>مركز قشور الضاهر</h1><p>' + esc(title) + '</p><p>التاريخ: ' + today() + '</p></div><table><thead><tr><th>#</th><th>التاريخ</th>' + (showC ? '<th>الزبون</th>' : '') + '<th>النوع</th><th>الدفع</th><th>سعر الطن $</th><th>الكمية (طن)</th><th>الخصم $</th><th>الصافي $</th><th>المدفوع $</th><th>الباقي $</th></tr></thead><tbody>';
+    var sT = 0, sD = 0, sA = 0, sP = 0, sR = 0, trs = [];
+    var head = '<thead><tr><th>#</th><th>التاريخ</th>' + (showC ? '<th>الزبون</th>' : '') + '<th>النوع</th><th>الدفع</th><th>سعر الطن $</th><th>الكمية (طن)</th><th>الخصم $</th><th>الصافي $</th><th>المدفوع $</th><th>الباقي $</th></tr></thead>';
     rows.forEach(function(x, i){
       sT += x.tons; sD += (x.disc || 0); sA += x.amount; sP += (x.paid || 0); sR += (x.remaining || 0);
-      h += '<tr><td>' + (i + 1) + '</td><td>' + x.date + '</td>' + (showC ? '<td>' + esc(x.customer) + '</td>' : '') + '<td>' + esc(x.type) + '</td><td' + (x.payType === "دين" ? ' class="d"' : '') + '>' + esc(x.payType) + '</td><td>' + fmt(x.price) + '</td><td>' + fmt(x.tons, 5) + '</td><td>' + fmt(x.disc || 0) + '</td><td>' + fmt(x.amount) + '</td><td>' + fmt(x.paid || 0) + '</td><td' + ((x.remaining || 0) > 0 ? ' class="d"' : '') + '>' + fmt(x.remaining || 0) + '</td></tr>';
+      trs.push('<tr><td>' + (i + 1) + '</td><td>' + x.date + '</td>' + (showC ? '<td>' + esc(x.customer) + '</td>' : '') + '<td>' + esc(x.type) + '</td><td' + (x.payType === "دين" ? ' class="d"' : '') + '>' + esc(x.payType) + '</td><td>' + fmt(x.price) + '</td><td>' + fmt(x.tons, 5) + '</td><td>' + fmt(x.disc || 0) + '</td><td>' + fmt(x.amount) + '</td><td>' + fmt(x.paid || 0) + '</td><td' + ((x.remaining || 0) > 0 ? ' class="d"' : '') + '>' + fmt(x.remaining || 0) + '</td></tr>');
     });
-    h += '</tbody><tfoot><tr><th colspan="' + (showC ? 6 : 5) + '">المجموع</th><th>' + fmt(sT, 5) + '</th><th>' + fmt(sD) + '</th><th>' + fmt(sA) + '</th><th>' + fmt(sP) + '</th><th' + (sR > 0 ? ' class="d"' : '') + '>' + fmt(sR) + '</th></tr></tfoot></table>';
-    h += '<p class="ft">برمجة وتطوير: د. عبدالله صالح — جميع الحقوق محفوظة</p>';
-    $("invoice").innerHTML = h;
-    setTimeout(function(){ window.print(); }, 50);
+    var foot = '<tfoot><tr><th colspan="' + (showC ? 6 : 5) + '">المجموع</th><th>' + fmt(sT, 5) + '</th><th>' + fmt(sD) + '</th><th>' + fmt(sA) + '</th><th>' + fmt(sP) + '</th><th' + (sR > 0 ? ' class="d"' : '') + '>' + fmt(sR) + '</th></tr></tfoot>';
+    var top = '<div class="ih"><h1>مركز قشور الضاهر</h1><p>' + esc(title) + '</p><p>التاريخ: ' + today() + '</p></div>';
+    var bottom = '<p class="ft">برمجة وتطوير: د. عبدالله صالح — جميع الحقوق محفوظة</p>';
+    var PER = 16, pages = [];
+    for (var k = 0; k < trs.length; k += PER) {
+      var last = k + PER >= trs.length;
+      pages.push((k === 0 ? top : '') + '<table>' + head + '<tbody>' + trs.slice(k, k + PER).join("") + '</tbody>' + (last ? foot : '') + '</table>' + (last ? bottom : ''));
+    }
+    var btn = this, label = btn.textContent; btn.disabled = true; btn.textContent = "جارٍ إنشاء الفاتورة...";
+    var box = $("invOut"); box.hidden = true; box.innerHTML = "";
+    try {
+      if (!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) throw new Error("lib");
+      var pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+      var pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight(), m = 24, el = $("invoice");
+      for (var p = 0; p < pages.length; p++) {
+        el.innerHTML = pages[p];
+        await new Promise(function(res){ setTimeout(res, 30); });
+        var cv = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+        var iw = pw - 2 * m, ih = cv.height * iw / cv.width, maxH = ph - 2 * m;
+        if (ih > maxH) { iw = iw * maxH / ih; ih = maxH; }
+        if (p) pdf.addPage();
+        pdf.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", (pw - iw) / 2, m, iw, ih);
+      }
+      el.innerHTML = "";
+      showInvOut(pdf.output("blob"), "فاتورة-" + tag + "-" + today() + ".pdf");
+    } catch (e) {
+      $("invoice").innerHTML = '<div class="ih"><h1>مركز قشور الضاهر</h1><p>' + esc(title) + '</p><p>التاريخ: ' + today() + '</p></div><table>' + head + '<tbody>' + trs.join("") + '</tbody>' + foot + '</table>' + bottom;
+      say("تعذر إنشاء ملف PDF مباشرة (تحقق من الاتصال بالإنترنت). سأفتح الطباعة بدلاً منه: اختر حفظ كـ PDF.");
+      setTimeout(function(){ window.print(); }, 100);
+    } finally { btn.disabled = false; btn.textContent = label; }
   });
+  var invUrl = null;
+  function showInvOut(blob, fname){
+    if (invUrl) URL.revokeObjectURL(invUrl);
+    invUrl = URL.createObjectURL(blob);
+    var box = $("invOut"); box.innerHTML = ""; box.hidden = false;
+    var a = document.createElement("a"); a.href = invUrl; a.download = fname; a.className = "btnlink"; a.textContent = "⬇️ تنزيل الفاتورة (PDF)"; box.appendChild(a);
+    var o = document.createElement("a"); o.href = invUrl; o.target = "_blank"; o.rel = "noopener"; o.className = "btnlink"; o.textContent = "👁️ فتح الفاتورة"; box.appendChild(o);
+    var file = null; try { file = new File([blob], fname, { type: "application/pdf" }); } catch (e) {}
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      var sb = document.createElement("button"); sb.type = "button"; sb.textContent = "📤 مشاركة (واتساب وغيره)";
+      sb.addEventListener("click", function(){ navigator.share({ files: [file], title: fname }).catch(function(){}); });
+      box.appendChild(sb);
+    }
+    say("تم إنشاء الفاتورة. اضغط تنزيل أو مشاركة.");
+  }
 
   /* ---------- Inventory (password protected) ---------- */
   var invUser = null;
@@ -842,10 +911,10 @@ h3{font-size:1rem;margin:16px 0 6px}
     });
     var ul = $("userList"); ul.innerHTML = "";
     state.users.forEach(function(u, i){
-      var ln = document.createElement("div"); ln.className = "line"; var sp = document.createElement("span"); sp.textContent = u.n + (invUser && invUser.n === u.n ? " (أنت)" : ""); ln.appendChild(sp);
+      var ln = document.createElement("div"); ln.className = "line"; var sp = document.createElement("span"); sp.textContent = u.n + (i === 0 ? " (المدير)" : "") + (invUser && invUser.n === u.n ? " (أنت)" : ""); ln.appendChild(sp);
       var b = document.createElement("button"); b.type = "button"; b.className = "danger small"; b.textContent = "حذف";
-      b.disabled = state.users.length <= 1 || (invUser && invUser.n === u.n);
-      b.addEventListener("click", function(){ state.users.splice(i, 1); save(); renderInv(); });
+      b.disabled = i === 0 || (invUser && invUser.n === u.n);
+      b.addEventListener("click", function(){ guardDel("حذف المستخدم «" + u.n + "»", function(){ var ix = state.users.indexOf(u); if (ix > 0) { state.users.splice(ix, 1); save(); renderInv(); } }); });
       ln.appendChild(b); ul.appendChild(ln);
     });
   }
@@ -937,6 +1006,47 @@ h3{font-size:1rem;margin:16px 0 6px}
     state.users[idx] = await mkUser(rc.n, np, state.users[idx].w);
     delete state.resetCh; save(); $("resetCode").value = ""; $("resetPass").value = ""; $("resetBox").hidden = true;
     invSay("تم تغيير كلمة السر. ادخل الآن بالكلمة الجديدة.");
+  });
+
+  /* ---------- Delete protection (admin password) ---------- */
+  var dlgFn = null, dlgFails = 0, dlgLock = 0;
+  function adminUser(){ return state.users[0] || null; }
+  function askAdmin(label, fn){
+    var a = adminUser(); if (!a) return;
+    dlgFn = fn; $("dlgT").textContent = "🔒 تأكيد بكلمة سر المدير";
+    $("dlgM").textContent = label + " — أدخل كلمة سر المدير («" + a.n + "»).";
+    $("dlgPass").value = ""; $("dlgErr").textContent = ""; $("dlg").hidden = false;
+    setTimeout(function(){ $("dlgPass").focus(); }, 50);
+  }
+  function closeDlg(){ $("dlg").hidden = true; dlgFn = null; $("dlgPass").value = ""; }
+  function guardDel(label, fn){
+    if (state.delMode === "free") { fn(); return; }
+    var a = adminUser();
+    if (!a) { say("المسح محمي بكلمة سر المدير ولا يوجد حساب مدير بعد. أنشئ حساب المدير من قسم الجرد، أو اختر «بدون كلمة سر» من وضع المسح."); return; }
+    if (invUser && invUser.n === a.n) { fn(); return; }
+    askAdmin(label, fn);
+  }
+  $("dlgNo").addEventListener("click", closeDlg);
+  $("dlgPass").addEventListener("keydown", function(e){ if (e.key === "Enter") { e.preventDefault(); $("dlgOk").click(); } });
+  $("dlgOk").addEventListener("click", async function(){
+    var a = adminUser(); if (!a) { closeDlg(); return; }
+    if (Date.now() < dlgLock) { $("dlgErr").textContent = "محاولات كثيرة خاطئة. انتظر نصف دقيقة."; return; }
+    var ok = false; try { ok = (await sha(a.s + $("dlgPass").value)) === a.h; } catch (e) {}
+    if (!ok) {
+      dlgFails++;
+      if (dlgFails >= 5) { dlgLock = Date.now() + 30000; dlgFails = 0; $("dlgErr").textContent = "محاولات كثيرة خاطئة. انتظر نصف دقيقة."; }
+      else $("dlgErr").textContent = "كلمة السر غير صحيحة.";
+      return;
+    }
+    dlgFails = 0; var f = dlgFn; closeDlg(); if (f) f();
+  });
+  $("delMode").value = state.delMode || "admin";
+  $("delMode").addEventListener("change", function(){
+    var nv = this.value, sel = this, a = adminUser();
+    function apply(){ state.delMode = nv; sel.value = nv; save(); say(nv === "admin" ? "المسح الآن محمي بكلمة سر المدير." : "المسح الآن بدون كلمة سر."); }
+    if (nv === "admin" || !a || (invUser && invUser.n === a.n)) { apply(); return; }
+    sel.value = state.delMode;
+    askAdmin("تغيير وضع المسح إلى «بدون كلمة سر»", apply);
   });
 
   loginTip();
