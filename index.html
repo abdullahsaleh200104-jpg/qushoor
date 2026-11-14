@@ -13,7 +13,6 @@
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" type="image/png" href="./icons/icon-192.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
@@ -297,13 +296,28 @@ h3{font-size:1rem;margin:16px 0 6px}
 
   <section class="card" aria-label="المزامنة">
     <details>
-      <summary style="cursor:pointer;font-weight:700">☁️ مزامنة مع Google Sheets (لتحديث ملف واحد من الهاتف والآيفون)</summary>
-      <div class="grid" style="margin-top:10px">
-        <label class="full">رابط تطبيق الويب (من Google Apps Script)<input id="syncUrl" class="num" placeholder="https://script.google.com/macros/s/..." autocomplete="off"></label>
-        <label class="full">المفتاح السري (نفس الموجود في السكربت)<input id="syncKey" class="num" autocomplete="off"></label>
+      <summary style="cursor:pointer;font-weight:700">☁️ ملف إكسل واحد يتحدّث من الهاتف والآيفون (Google Sheets)</summary>
+      <p class="tip" style="margin:10px 0">الإعداد مرة واحدة، والأفضل من الكمبيوتر (محرر Apps Script غير مريح على الهاتف). بعدها يعمل كل شيء من الهاتف تلقائياً.</p>
+      <ol class="tip" style="padding-inline-start:22px;line-height:1.9;margin:0 0 10px">
+        <li>اضغط «نسخ كود السكربت» (يُولَّد مفتاح سري داخله تلقائياً).</li>
+        <li>افتح ملف Google Sheets جديداً (الزر أدناه)، ثم من القائمة: Extensions ← Apps Script.</li>
+        <li>احذف الكود الموجود، والصق الكود، ثم اضغط حفظ.</li>
+        <li>اضغط Deploy ← New deployment ← النوع Web app. اجعل Execute as: Me و Who has access: Anyone، ثم Deploy ووافق على الصلاحيات.</li>
+        <li>انسخ رابط Web app والصقه في الخانة أدناه، ثم اضغط «مزامنة الآن».</li>
+      </ol>
+      <div class="actions" style="margin:0 0 10px">
+        <button id="copyScript" type="button">1) نسخ كود السكربت</button>
+        <a class="btnlink" href="https://sheets.new" target="_blank" rel="noopener">2) فتح Google Sheets جديد</a>
+      </div>
+      <div class="grid">
+        <label class="full">رابط Web app<input id="syncUrl" class="num" placeholder="https://script.google.com/macros/s/..." autocomplete="off"></label>
+        <label class="full">المفتاح السري (يُولَّد تلقائياً عند نسخ الكود)<input id="syncKey" class="num" autocomplete="off"></label>
         <label class="full" style="flex-direction:row;align-items:center;gap:8px"><input id="syncAuto" type="checkbox" style="width:auto"> مزامنة تلقائية بعد كل إضافة أو تعديل</label>
       </div>
-      <button id="syncNow" type="button" style="margin-top:8px">مزامنة الآن</button>
+      <div class="actions" style="margin-top:8px">
+        <button class="primary" id="syncNow" type="button" style="margin:0">مزامنة الآن</button>
+        <button id="shareXlsx" type="button">📤 مشاركة ملف إكسل (حفظ في الملفات)</button>
+      </div>
       <p class="msg" id="syncMsg" role="status"></p>
     </details>
   </section>
@@ -810,34 +824,81 @@ h3{font-size:1rem;margin:16px 0 6px}
     var foot = '<tfoot><tr><th colspan="' + (showC ? 6 : 5) + '">المجموع</th><th>' + fmt(sT, 5) + '</th><th>' + fmt(sD) + '</th><th>' + fmt(sA) + '</th><th>' + fmt(sP) + '</th><th' + (sR > 0 ? ' class="d"' : '') + '>' + fmt(sR) + '</th></tr></tfoot>';
     var top = '<div class="ih"><h1>مركز قشور الضاهر</h1><p>' + esc(title) + '</p><p>التاريخ: ' + today() + '</p></div>';
     var bottom = '<p class="ft">برمجة وتطوير: د. عبدالله صالح — جميع الحقوق محفوظة</p>';
-    var PER = 16, pages = [];
-    for (var k = 0; k < trs.length; k += PER) {
-      var last = k + PER >= trs.length;
-      pages.push((k === 0 ? top : '') + '<table>' + head + '<tbody>' + trs.slice(k, k + PER).join("") + '</tbody>' + (last ? foot : '') + '</table>' + (last ? bottom : ''));
-    }
+    var items = rows.map(function(x, i){
+      var cells = [String(i + 1), x.date]; if (showC) cells.push(x.customer);
+      cells.push(x.type, x.payType, fmt(x.price), fmt(x.tons, 5), fmt(x.disc || 0), fmt(x.amount), fmt(x.paid || 0), fmt(x.remaining || 0));
+      var red = cells.map(function(){ return false; }); red[showC ? 4 : 3] = x.payType === "دين"; red[cells.length - 1] = (x.remaining || 0) > 0;
+      return { cells: cells, red: red };
+    });
+    items.push({ tot: true, span: showC ? 6 : 5, cells: ["المجموع", fmt(sT, 5), fmt(sD), fmt(sA), fmt(sP), fmt(sR)], red: [false, false, false, false, false, sR > 0] });
     var btn = this, label = btn.textContent; btn.disabled = true; btn.textContent = "جارٍ إنشاء الفاتورة...";
     var box = $("invOut"); box.hidden = true; box.innerHTML = "";
     try {
-      if (!window.html2canvas || !(window.jspdf && window.jspdf.jsPDF)) throw new Error("lib");
+      if (!(window.jspdf && window.jspdf.jsPDF)) throw new Error("lib");
+      var cvs = invCanvases(title, showC, items);
       var pdf = new window.jspdf.jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
-      var pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight(), m = 24, el = $("invoice");
-      for (var p = 0; p < pages.length; p++) {
-        el.innerHTML = pages[p];
-        await new Promise(function(res){ setTimeout(res, 30); });
-        var cv = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
-        var iw = pw - 2 * m, ih = cv.height * iw / cv.width, maxH = ph - 2 * m;
-        if (ih > maxH) { iw = iw * maxH / ih; ih = maxH; }
-        if (p) pdf.addPage();
-        pdf.addImage(cv.toDataURL("image/jpeg", 0.92), "JPEG", (pw - iw) / 2, m, iw, ih);
-      }
-      el.innerHTML = "";
+      cvs.forEach(function(cv, i){ if (i) pdf.addPage(); pdf.addImage(cv.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 842, 595); });
       showInvOut(pdf.output("blob"), "فاتورة-" + tag + "-" + today() + ".pdf");
     } catch (e) {
-      $("invoice").innerHTML = '<div class="ih"><h1>مركز قشور الضاهر</h1><p>' + esc(title) + '</p><p>التاريخ: ' + today() + '</p></div><table>' + head + '<tbody>' + trs.join("") + '</tbody>' + foot + '</table>' + bottom;
+      $("invoice").innerHTML = top + '<table>' + head + '<tbody>' + trs.join("") + '</tbody>' + foot + '</table>' + bottom;
       say("تعذر إنشاء ملف PDF مباشرة (تحقق من الاتصال بالإنترنت). سأفتح الطباعة بدلاً منه: اختر حفظ كـ PDF.");
       setTimeout(function(){ window.print(); }, 100);
     } finally { btn.disabled = false; btn.textContent = label; }
   });
+  var FONT = "Tahoma, 'Segoe UI', 'Noto Naskh Arabic', 'Geeza Pro', Arial, sans-serif";
+  function invCanvases(title, showC, items){
+    var W = 842, H = 595, M = 28, S = 2, RH = 22, HH = 24, FT = 22, TOPB = 80;
+    var cols = [["#", 28, "c"], ["التاريخ", 70, "c"]];
+    if (showC) cols.push(["الزبون", 120, "r"]);
+    cols = cols.concat([["النوع", 84, "r"], ["الدفع", 46, "c"], ["سعر الطن $", 64, "c"], ["الكمية (طن)", 74, "c"], ["الخصم $", 58, "c"], ["الصافي $", 72, "c"], ["المدفوع $", 64, "c"], ["الباقي $", 64, "c"]]);
+    var sum = 0; cols.forEach(function(c){ sum += c[1]; });
+    var k = (W - 2 * M) / sum; cols.forEach(function(c){ c[1] = c[1] * k; });
+    function txt(c, t, x, y, size, bold, color, align, maxW){
+      t = String(t); var sz = size;
+      function setF(){ c.font = (bold ? "bold " : "") + sz + "px " + FONT; }
+      setF();
+      if (maxW) {
+        while (c.measureText(t).width > maxW && sz > 7) { sz -= 0.5; setF(); }
+        if (c.measureText(t).width > maxW) { while (t.length > 1 && c.measureText(t + "…").width > maxW) t = t.slice(0, -1); t += "…"; }
+      }
+      c.fillStyle = color; c.textAlign = align;
+      try { c.direction = /[\u0600-\u06FF]/.test(t) ? "rtl" : "ltr"; } catch (e) {}
+      c.fillText(t, x, y);
+    }
+    function drawRow(c, y, cells, item, header){
+      var xr = W - M, ci = 0;
+      cells.forEach(function(cell, i){
+        var span = (!header && item && item.span && i === 0) ? item.span : 1, w = 0;
+        for (var j = 0; j < span; j++) w += cols[ci + j][1];
+        var xl = xr - w, h = header ? HH : RH;
+        if (header) { c.fillStyle = "#e2efe8"; c.fillRect(xl, y, w, h); }
+        else if (item && item.tot) { c.fillStyle = "#f1f1f1"; c.fillRect(xl, y, w, h); }
+        c.strokeStyle = "#999"; c.lineWidth = 0.5; c.strokeRect(xl, y, w, h);
+        var red = !header && item && item.red && item.red[i], align = (span === 1 && cols[ci][2] === "r") ? "right" : "center";
+        txt(c, cell, align === "right" ? xr - 5 : xl + w / 2, y + h / 2 + 0.5, header ? 10 : 11, header || red || (item && item.tot), red ? "#b3382c" : "#000", align, w - 8);
+        xr = xl; ci += span;
+      });
+    }
+    var cap1 = Math.floor((H - 2 * M - TOPB - HH - FT) / RH), capN = Math.floor((H - 2 * M - HH - FT) / RH);
+    var pages = [], idx = 0;
+    while (idx < items.length || !pages.length) { var cap = pages.length ? capN : cap1; pages.push(items.slice(idx, idx + cap)); idx += cap; }
+    return pages.map(function(list, p){
+      var cv = document.createElement("canvas"); cv.width = W * S; cv.height = H * S;
+      var c = cv.getContext("2d"); c.scale(S, S); c.fillStyle = "#fff"; c.fillRect(0, 0, W, H); c.textBaseline = "middle";
+      var y = M;
+      if (p === 0) {
+        txt(c, "مركز قشور الضاهر", W / 2, y + 12, 22, true, "#000", "center");
+        txt(c, title, W / 2, y + 38, 14, false, "#000", "center", W - 2 * M);
+        txt(c, "التاريخ: " + today(), W / 2, y + 58, 11, false, "#444", "center");
+        y = M + TOPB;
+      }
+      drawRow(c, y, cols.map(function(x){ return x[0]; }), null, true); y += HH;
+      list.forEach(function(it){ drawRow(c, y, it.cells, it, false); y += RH; });
+      txt(c, "برمجة وتطوير: د. عبدالله صالح — جميع الحقوق محفوظة", W / 2, H - 16, 9, false, "#666", "center");
+      txt(c, "صفحة " + (p + 1) + " من " + pages.length, M, H - 16, 9, false, "#666", "left");
+      return cv;
+    });
+  }
   var invUrl = null;
   function showInvOut(blob, fname){
     if (invUrl) URL.revokeObjectURL(invUrl);
@@ -958,6 +1019,70 @@ h3{font-size:1rem;margin:16px 0 6px}
   });
 
   /* ---------- Google Sheets sync ---------- */
+  var GS_TPL = `// كود المزامنة الخاص ببرنامج قشور الضاهر (المفتاح السري موجود فيه مسبقاً)
+var SECRET = "__KEY__";
+
+function doGet() { return ContentService.createTextOutput("ok"); }
+
+function doPost(e) {
+  var d = JSON.parse(e.postData.contents);
+  if (d.key !== SECRET) return ContentService.createTextOutput("denied");
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  put_(ss, "المبيعات", d.sales, true);
+  put_(ss, "الدين", d.debt, true);
+  put_(ss, "التسديدات", d.pays, false);
+  home_(ss, d);
+  return ContentService.createTextOutput("ok");
+}
+
+function put_(ss, name, rows, redLast) {
+  var sh = ss.getSheetByName(name) || ss.insertSheet(name);
+  sh.clearContents();
+  sh.setRightToLeft(true);
+  if (!rows || !rows.length) return;
+  var w = Math.max.apply(null, rows.map(function (r) { return r.length; }));
+  rows = rows.map(function (r) { r = r.slice(); while (r.length < w) r.push(""); return r; });
+  sh.getRange(1, 1, rows.length, w).setValues(rows);
+  sh.getRange(1, 1, 1, w).setFontWeight("bold").setBackground("#e2efe8");
+  sh.setFrozenRows(1);
+  if (redLast && rows.length > 1) sh.getRange(2, w, rows.length - 1, 1).setFontColor("#b3382c");
+}
+
+function home_(ss, d) {
+  var h = ss.getSheetByName("الرئيسية");
+  if (!h) {
+    h = ss.insertSheet("الرئيسية", 0);
+    h.setRightToLeft(true);
+    var S = "'المبيعات'!";
+    h.getRange("A1").setValue("مركز قشور الضاهر").setFontWeight("bold").setFontSize(16);
+    h.getRange("A4").setValue("🔎 البحث: اكتب في الخانات الصفراء (فارغة = الكل)").setFontWeight("bold");
+    h.getRange("A5").setValue("اسم الزبون (أو جزء منه)");
+    h.getRange("A6").setValue("إجمالي مشترياته ($)");
+    h.getRange("A7").setValue("إجمالي ما دفعه ($)");
+    h.getRange("A8").setValue("إجمالي الدين عليه ($)");
+    h.getRange("A10").setValue("الصنف (أو جزء منه)");
+    h.getRange("A11").setValue("الكمية المباعة (طن)");
+    h.getRange("A12").setValue("المبلغ ($)");
+    h.getRange("A13").setValue("الدين فيه ($)");
+    h.getRange("A15").setValue("الإجماليات").setFontWeight("bold");
+    h.getRange("A16").setValue("إجمالي المبيعات بعد الخصم ($)");
+    h.getRange("A17").setValue("إجمالي الديون ($)");
+    h.getRange("B5").setBackground("#fff2a8");
+    h.getRange("B10").setBackground("#fff2a8");
+    h.getRange("B6").setFormula("=SUMIF(" + S + 'C:C,"*"&B5&"*",' + S + "I:I)");
+    h.getRange("B7").setFormula("=SUMIF(" + S + 'C:C,"*"&B5&"*",' + S + "J:J)");
+    h.getRange("B8").setFormula("=SUMIF(" + S + 'C:C,"*"&B5&"*",' + S + "K:K)").setFontColor("#b3382c");
+    h.getRange("B11").setFormula("=SUMIF(" + S + 'D:D,"*"&B10&"*",' + S + "G:G)");
+    h.getRange("B12").setFormula("=SUMIF(" + S + 'D:D,"*"&B10&"*",' + S + "I:I)");
+    h.getRange("B13").setFormula("=SUMIF(" + S + 'D:D,"*"&B10&"*",' + S + "K:K)").setFontColor("#b3382c");
+    h.getRange("B16").setFormula("=SUM(" + S + "I:I)");
+    h.getRange("B17").setFormula("=SUM(" + S + "K:K)").setFontColor("#b3382c");
+    h.setColumnWidth(1, 260); h.setColumnWidth(2, 160);
+  }
+  h.getRange("A2").setValue("مرخّص لـ: " + d.licensed + " | آخر مزامنة: " + d.date);
+}
+`;
+  function randKey(){ var al = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789", a = crypto.getRandomValues(new Uint8Array(20)), k = ""; for (var i = 0; i < 20; i++) k += al[a[i] % al.length]; return k; }
   function syncPayload(){
     return JSON.stringify({ key: state.sync.key, licensed: licName, date: today(),
       sales: salesAoa(state.rows),
@@ -965,17 +1090,46 @@ h3{font-size:1rem;margin:16px 0 6px}
       pays: paysAoa() });
   }
   async function syncNow(){
-    if (!state.sync.url) { $("syncMsg").textContent = "اكتب رابط التطبيق أولاً."; return; }
+    var u = state.sync.url, m = $("syncMsg");
+    if (!u) { m.textContent = "اكتب رابط Web app أولاً."; return; }
+    var body = syncPayload(), t = new Date().toLocaleTimeString("en-GB");
     try {
-      await fetch(state.sync.url, { method: "POST", mode: "no-cors", body: syncPayload() });
-      $("syncMsg").textContent = "تمت المزامنة الساعة " + new Date().toLocaleTimeString("en-GB");
-    } catch (e) { $("syncMsg").textContent = "تعذرت المزامنة. تحقق من الاتصال ومن صحة الرابط."; }
+      var res = await fetch(u, { method: "POST", body: body }), txt = (await res.text()).trim();
+      if (txt === "ok") m.textContent = "تمت المزامنة بنجاح الساعة " + t;
+      else if (txt === "denied") m.textContent = "المفتاح السري لا يطابق الموجود في السكربت. انسخ الكود من جديد والصقه ثم انشره كإصدار جديد.";
+      else m.textContent = "ردّ غير متوقع. تأكد أن الرابط هو رابط Web app وأن Who has access = Anyone.";
+    } catch (e) {
+      try { await fetch(u, { method: "POST", mode: "no-cors", body: body }); m.textContent = "أُرسلت البيانات الساعة " + t + " (لا يمكن للمتصفح تأكيد الاستلام، افتح الملف للتحقق)."; }
+      catch (e2) { m.textContent = "تعذرت المزامنة. تحقق من الاتصال بالإنترنت ومن الرابط."; }
+    }
   }
   $("syncUrl").value = state.sync.url || ""; $("syncKey").value = state.sync.key || ""; $("syncAuto").checked = !!state.sync.auto;
   $("syncUrl").addEventListener("change", function(){ state.sync.url = this.value.trim(); save(); });
   $("syncKey").addEventListener("change", function(){ state.sync.key = this.value.trim(); save(); });
   $("syncAuto").addEventListener("change", function(){ state.sync.auto = this.checked; save(); });
   $("syncNow").addEventListener("click", function(){ if (!licensed) return; state.sync.url = $("syncUrl").value.trim(); state.sync.key = $("syncKey").value.trim(); save(); syncNow(); });
+  $("copyScript").addEventListener("click", function(){
+    if (!state.sync.key) { state.sync.key = randKey(); save(); }
+    $("syncKey").value = state.sync.key;
+    var code = GS_TPL.replace("__KEY__", state.sync.key), m = $("syncMsg");
+    function ok(){ m.textContent = "تم نسخ كود السكربت. الصقه في Apps Script (الخطوة 2 و3)."; }
+    function fb(){
+      var ta = document.createElement("textarea"); ta.value = code; ta.style.cssText = "position:fixed;opacity:0;top:0"; document.body.appendChild(ta); ta.select();
+      var d = false; try { d = document.execCommand("copy"); } catch (e) {} document.body.removeChild(ta);
+      m.textContent = d ? "تم نسخ كود السكربت." : "تعذر النسخ التلقائي من هذا المتصفح.";
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(code).then(ok, fb); else fb();
+  });
+  $("shareXlsx").addEventListener("click", function(){
+    if (!licensed) return;
+    if (typeof XLSX === "undefined") { $("syncMsg").textContent = "مكتبة إكسل غير محمّلة. تحقق من الإنترنت وأعد المحاولة."; return; }
+    var data; try { data = buildWb(); } catch (e) { $("syncMsg").textContent = "تعذر إنشاء الملف."; return; }
+    var blob = new Blob([data], { type: XLSX_MIME }), name = "قشور-الضاهر.xlsx", file = null;
+    try { file = new File([blob], name, { type: XLSX_MIME }); } catch (e) {}
+    var tip = "اختر «حفظ في الملفات» ثم نفس المجلد في كل مرة، وعند السؤال اختر «استبدال» ليبقى ملف واحد.";
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: name }).then(function(){ $("syncMsg").textContent = tip; }).catch(function(){}); }
+    else { plainDownload(blob, name); $("syncMsg").textContent = "تم تنزيل الملف. " + tip; }
+  });
 
   /* ---------- Forgot password (WhatsApp + developer code) ---------- */
   $("forgotBtn").addEventListener("click", function(){ $("resetBox").hidden = !$("resetBox").hidden; });
