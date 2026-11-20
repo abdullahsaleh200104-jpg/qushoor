@@ -1,10 +1,12 @@
 /* مركز قشور الضاهر - Service Worker (يعمل بدون إنترنت) */
-var CACHE = "qushoor-v11";
+var CACHE = "qushoor-v13";
 var LOCAL = ["./", "./index.html", "./manifest.json",
   "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
   "./lib/xlsx.full.min.js", "./lib/jspdf.umd.min.js"];
 var CDN = ["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"];
+  "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+  "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js",
+  "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"];
 
 /* كل ملف يُخزَّن لوحده: غياب ملف (مثل أيقونة) لا يُفشل التثبيت كله */
 function put(cache, url, opts){

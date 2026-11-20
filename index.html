@@ -92,7 +92,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .types .row{align-items:center}
 .types input{flex:1}
 .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
-table{border-collapse:collapse;width:100%;min-width:820px;font-variant-numeric:tabular-nums}
+table{border-collapse:collapse;width:100%;min-width:900px;font-variant-numeric:tabular-nums}
 th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
 th{font-size:.75rem;color:var(--muted);letter-spacing:.02em;background:var(--bg)}
 tfoot td{font-weight:800;border-bottom:0;background:var(--accent-soft)}
@@ -162,6 +162,14 @@ h3{font-size:1rem;margin:16px 0 6px}
 .ci{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:right;font-weight:700;margin-bottom:6px;padding:10px 12px}
 .ci small{display:block;color:var(--muted);font-weight:400;font-size:.8rem}
 .ci .amt{direction:ltr;font-variant-numeric:tabular-nums;white-space:nowrap}
+textarea{font:inherit;font-size:.85rem;direction:ltr;text-align:left;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%;min-height:96px;resize:vertical}
+body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],body[data-noexp="1"] #invBlock,body[data-noexp="1"] #cdInv{display:none!important}
+#cfBanner{width:100%;background:var(--danger);color:#fff;border-color:var(--danger);font-weight:800;margin-top:6px}
+.cfi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;background:var(--bg)}
+.cfi .d{font-size:.85rem;color:var(--muted);margin:2px 0}
+.cfi .df{font-size:.9rem;padding:2px 0}
+.dev{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px}
+.dev label.chk{padding:2px 0}
 [hidden]{display:none!important}
 @media (max-width:420px){.grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:no-preference){button{transition:opacity .15s}}
@@ -203,13 +211,15 @@ h3{font-size:1rem;margin:16px 0 6px}
       <p class="sub">تسعير القشور على أساس الطن بالدولار.</p>
       <p class="sub" id="licLine" style="font-weight:700"></p>
       <p class="sub" id="offLine"></p>
+      <p class="sub" id="cloudLine"></p>
+      <button id="cfBanner" class="small" type="button" hidden></button>
     </div>
     <button id="installApp" class="small" type="button" aria-expanded="false">📥 إضافة اختصار للشاشة</button>
   </div>
   <div id="installHelp" class="help" hidden></div>
 
   <div class="tabpanel" id="tab-sales">
-  <section class="card" aria-label="التسعير">
+  <section class="card" id="pricingCard" aria-label="التسعير">
     <div class="grid">
       <div class="full row">
         <label>نوع القشر
@@ -231,6 +241,7 @@ h3{font-size:1rem;margin:16px 0 6px}
       <label class="full">اسم الزبون (اختياري)
         <input id="customer" list="custNames" placeholder="اتركه فارغاً = زبون عام" autocomplete="off"><datalist id="custNames"></datalist>
       </label>
+      <p id="custWarn" class="tip debt full" style="font-weight:700" hidden></p>
 
       <label class="full">سعر الطن ($)
         <input id="price" class="num" inputmode="decimal" placeholder="0" autocomplete="off">
@@ -307,12 +318,12 @@ h3{font-size:1rem;margin:16px 0 6px}
       <h2>القائمة <span id="count" class="sub"></span></h2>
       <div style="display:flex;gap:8px">
         <input id="search" placeholder="بحث باسم الزبون..." style="padding:6px 10px;font-size:.9rem;width:160px" autocomplete="off">
-        <button class="danger" id="clear" type="button">مسح الكل</button>
+        <button class="danger" id="clear" data-act="del" type="button">مسح الكل</button>
       </div>
     </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>#</th><th>التاريخ</th><th>الزبون</th><th>النوع</th><th>طريقة الدفع</th><th>سعر الطن $</th><th>الكمية (طن)</th><th>الخصم $</th><th>المبلغ بعد الخصم $</th><th>المدفوع $</th><th class="debt">الباقي $</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>التاريخ</th><th>الزبون</th><th>النوع</th><th>طريقة الدفع</th><th>سعر الطن $</th><th>الكمية (طن)</th><th>الكمية (كغ)</th><th>الخصم $</th><th>المبلغ بعد الخصم $</th><th>المدفوع $</th><th class="debt">الباقي $</th><th></th></tr></thead>
         <tbody id="rows"></tbody>
         <tfoot id="foot"></tfoot>
       </table>
@@ -414,7 +425,7 @@ h3{font-size:1rem;margin:16px 0 6px}
     </div>
     <p class="tip debt" id="payInfo" style="margin-top:6px"></p>
     <button id="payBtn" type="button" style="margin-top:8px">تسجيل التسديد</button>
-    <h3>🧾 فاتورة PDF</h3>
+    <div id="invBlock"><h3>🧾 فاتورة PDF</h3>
     <div class="grid">
       <label>الفاتورة لـ
         <select id="invScope"><option value="cust">زبون محدد</option><option value="all">كامل المبيعات</option><option value="n">آخر عدد أحدده</option></select>
@@ -424,7 +435,7 @@ h3{font-size:1rem;margin:16px 0 6px}
     </div>
     <button class="primary" id="invBtn" type="button">إصدار الفاتورة (حفظ PDF)</button>
     <p class="tip" style="margin-top:6px">يُنشأ ملف PDF حقيقي، وتظهر أزرار التنزيل والمشاركة.</p>
-    <div class="actions" id="invOut" hidden></div>
+    <div class="actions" id="invOut" hidden></div></div>
   </section>
   </div>
 
@@ -482,7 +493,48 @@ h3{font-size:1rem;margin:16px 0 6px}
   </div>
 
   <div class="tabpanel" id="tab-settings" hidden>
-  <section class="card" aria-label="شام كاش">
+  <section class="card" id="cloudCard" aria-label="ربط الأجهزة">
+    <div class="head"><h2>☁️ ربط الأجهزة (مدير وعمال)</h2></div>
+    <p class="tip" id="cloudStat" style="margin-bottom:8px"></p>
+    <p class="msg" id="cloudMsg" role="status"></p>
+    <div id="cloudOff">
+      <p class="tip">اربط أكثر من جوال: العامل يسجّل المبيعات بالمحل والمدير يتابع مباشرة من أي مكان. يعمل بدون إنترنت ويزامن لما يرجع النت، وإذا عدّل جهازان نفس الفاتورة بنفس الوقت بيطلعلك تنبيه.</p>
+      <details style="margin-top:10px"><summary style="font-weight:700;cursor:pointer">① خطوات إنشاء مشروع Firebase مجاني (مرة واحدة)</summary>
+        <ol class="tip" style="padding-inline-start:20px;line-height:1.9;margin-top:8px">
+          <li>افتح <b>console.firebase.google.com</b> وسجّل بحساب Google ثم <b>Add project</b> (أي اسم، وعطّل Google Analytics).</li>
+          <li>من ⚙️ <b>Project settings</b> ← <b>Your apps</b> ← أيقونة الويب <b>&lt;/&gt;</b> ← سمّه واضغط Register. انسخ كامل كود <b>firebaseConfig</b>.</li>
+          <li>من <b>Build ← Firestore Database ← Create database</b>، اختر أقرب موقع، ثم <b>Start in production mode</b>.</li>
+          <li>افتح تبويب <b>Rules</b>، احذف كل شيء والصق القواعد التالية، ثم <b>Publish</b>.</li>
+        </ol>
+        <textarea id="fbRules" readonly rows="11" style="min-height:190px"></textarea>
+        <button id="fbRulesCopy" class="small" type="button" style="margin-top:6px">📋 نسخ القواعد</button>
+      </details>
+      <h3>② أنا المدير: إنشاء مساحة جديدة</h3>
+      <label>الصق إعدادات Firebase كما هي<textarea id="fbCfg" placeholder="const firebaseConfig = { apiKey: &quot;...&quot;, authDomain: &quot;...&quot;, projectId: &quot;...&quot;, ... };"></textarea></label>
+      <label style="margin-top:8px">اسم هذا الجهاز<input id="mgrDev" value="جوال المدير" autocomplete="off"></label>
+      <button class="primary" id="cloudCreate" type="button">إنشاء المساحة ورفع بياناتي</button>
+      <h3>③ جهاز عامل (أو مدير إضافي): لصق رمز الربط</h3>
+      <label>رمز الربط (من المدير)<textarea id="joinCode" placeholder="QSH1...."></textarea></label>
+      <label style="margin-top:8px">اسم هذا الجهاز<input id="joinDev" placeholder="مثال: جوال العامل" autocomplete="off"></label>
+      <button class="primary" id="cloudJoin" type="button">ربط هذا الجهاز</button>
+    </div>
+    <div id="cloudOn" hidden>
+      <div class="actions"><button id="cloudNow" type="button">🔄 مزامنة الآن</button><button id="cloudLeave" class="danger" type="button">فصل هذا الجهاز</button></div>
+      <div class="mgr-only" id="cloudMgr">
+        <h3>➕ دعوة جهاز جديد</h3>
+        <div class="actions"><button id="invW" type="button">رمز ربط لجهاز عامل</button><button id="invM" type="button">رمز لمدير إضافي</button></div>
+        <div id="invCodeBox" hidden style="margin-top:8px">
+          <textarea id="invCode" readonly rows="4"></textarea>
+          <p class="tip" id="invNote" style="margin:6px 0"></p>
+          <div class="actions" style="margin-top:0"><button id="invCopy" class="small" type="button">📋 نسخ الرمز</button><button id="invWa" class="small" type="button">💬 إرسال بواتساب</button></div>
+        </div>
+        <h3>📱 الأجهزة والصلاحيات</h3>
+        <div id="devList"></div>
+        <p class="tip" style="margin-top:8px">الوارد والمصروفات والأرباح محفوظة بمسار سري لا يصل لأجهزة العمال أبداً. أما صلاحيات الأزرار (تعديل/حذف...) فتُطبَّق داخل البرنامج، وللحماية الكاملة منها يلزم نظام حسابات Firebase.</p>
+      </div>
+    </div>
+  </section>
+  <section class="card mgr-only" aria-label="شام كاش">
     <div class="head"><h2>📱 باركود شام كاش</h2></div>
     <p class="tip" style="margin-bottom:10px">ارفع صورة باركود حسابك مرة واحدة (لقطة شاشة من تطبيق شام كاش). يظهر للزبون عند اختيار «شام كاش» في البيع وتسديد الدين.</p>
     <div id="shamPrev" style="margin-bottom:10px"></div>
@@ -492,7 +544,7 @@ h3{font-size:1rem;margin:16px 0 6px}
       <button id="shamDel" class="danger" type="button">حذف الباركود</button>
     </div>
   </section>
-  <section class="card" aria-label="الإعدادات والتصدير">
+  <section class="card mgr-only" aria-label="الإعدادات والتصدير">
     <div class="head"><h2>⚙️ التصدير والإعدادات</h2></div>
     <div class="actions">
       <button class="primary" style="margin:0" id="export" type="button">تصدير إلى إكسل (ملف)</button>
@@ -507,11 +559,12 @@ h3{font-size:1rem;margin:16px 0 6px}
     <h3>🗑️ حماية المسح</h3>
     <label>🗑️ وضع المسح (العمليات والأنواع والمستخدمون)
       <select id="delMode"><option value="admin">🔒 بكلمة سر المدير فقط</option><option value="free">🔓 بدون كلمة سر</option></select>
+    <label class="chk" style="margin-top:10px"><input id="warnDup" type="checkbox"> تنبيه عند إضافة بيع باسم زبون موجود مسبقاً</label>
     </label>
     <p class="tip" style="margin-top:8px">الملف يُفتح مباشرة في إكسل بالعربي. البيانات محفوظة على جهازك.</p>
   </section>
 
-  <section class="card" aria-label="المزامنة">
+  <section class="card mgr-only" aria-label="المزامنة">
     <details>
       <summary style="cursor:pointer;font-weight:700">☁️ ملف إكسل واحد يتحدّث من الهاتف والآيفون (Google Sheets)</summary>
       <p class="tip" style="margin:10px 0">الإعداد مرة واحدة، والأفضل من الكمبيوتر (محرر Apps Script غير مريح على الهاتف). بعدها يعمل كل شيء من الهاتف تلقائياً.</p>
@@ -555,12 +608,31 @@ h3{font-size:1rem;margin:16px 0 6px}
   </nav>
 </div>
 
+<div class="dlg" id="cfmDlg" hidden>
+  <div class="dlgbox" role="dialog" aria-modal="true" dir="rtl">
+    <h2 id="cfmT"></h2>
+    <p id="cfmM" style="margin:0;line-height:1.7"></p>
+    <div class="actions" id="cfmBtns" style="margin:0"></div>
+  </div>
+</div>
+
+<div class="dlg" id="cfDlg" hidden>
+  <div class="dlgbox" role="dialog" aria-modal="true" dir="rtl" style="max-height:92vh;overflow:auto">
+    <h2>⚠️ تعارضات التعديل بين الأجهزة</h2>
+    <p class="tip">عُدِّلت هذه العمليات من جهازين بنفس الوقت. لم يُستبدل أي شيء تلقائياً، اختر النسخة الصحيحة لكل عملية.</p>
+    <div id="cfList"></div>
+    <div class="actions" style="margin:0"><button id="cfClose" type="button">إغلاق</button></div>
+  </div>
+</div>
+
 <div class="dlg" id="editDlg" hidden>
   <div class="dlgbox" role="dialog" aria-modal="true" dir="rtl" style="max-height:92vh;overflow:auto">
     <h2>✏️ تعديل الفاتورة</h2>
+    <p class="tip">عدّل البيانات ثم اختر: حفظ التعديل على الفاتورة القديمة، أو إضافة فاتورة جديدة بهذه البيانات.</p>
     <div class="grid">
       <label>التاريخ<input id="edDate" type="date"></label>
-      <label>الزبون<input id="edCust" list="custNames" autocomplete="off"></label>
+      <label>الوقت<input id="edTime" type="time"></label>
+      <label class="full">الزبون<input id="edCust" list="custNames" autocomplete="off"></label>
       <label class="full">النوع<select id="edType"></select></label>
       <label class="full">سعر الطن ($)<input id="edPrice" class="num" inputmode="decimal" autocomplete="off"></label>
       <div class="full row">
@@ -577,7 +649,7 @@ h3{font-size:1rem;margin:16px 0 6px}
     </div>
     <div class="result"><div><div class="k">المبلغ بعد الخصم ($)</div><div class="v num" id="edAmt">0</div></div><div id="edRemBox"><div class="k">الباقي ($)</div><div class="v num debt" id="edRem">0</div></div></div>
     <p class="err" id="edErr" role="alert" style="color:var(--danger);font-weight:700;min-height:1.4em;margin:0"></p>
-    <div class="actions" style="margin:0"><button class="primary" id="edSave" type="button" style="margin:0">حفظ التعديل</button><button id="edCancel" type="button">إلغاء</button></div>
+    <div class="actions" style="margin:0"><button class="primary" id="edSave" type="button" style="margin:0">💾 حفظ التعديل على هذه الفاتورة</button><button id="edNew" type="button">➕ حفظ كفاتورة جديدة (تبقى القديمة كما هي)</button><button id="edCancel" type="button">إلغاء</button></div>
   </div>
 </div>
 
@@ -607,12 +679,13 @@ h3{font-size:1rem;margin:16px 0 6px}
   var $ = function(id){ return document.getElementById(id); };
   var state = {
     types: ["قشور فستق", "قشور لوز", "قشور جوز", "قشور بندق"],
-    prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], delMode: "admin", sync: { url: "", key: "", auto: false }, autoXl: { on: false, last: 0 }, purchases: [], expenses: [], shamQR: "", shamInfo: "", customers: []
+    prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], delMode: "admin", sync: { url: "", key: "", auto: false }, autoXl: { on: false, last: 0 }, purchases: [], expenses: [], shamQR: "", shamInfo: "", customers: [], warnDup: true, cloud: { on: false }, cm: {}, conflicts: []
   };
   try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.types) state = Object.assign(state, s); } catch (e) {}
-  state.customers = state.customers || []; state.purchases = state.purchases || []; state.expenses = state.expenses || []; state.payments = state.payments || []; state.seasons = state.seasons || [];
+  state.cm = state.cm || {}; state.conflicts = state.conflicts || []; state.cloud = state.cloud || { on: false }; state.customers = state.customers || []; state.purchases = state.purchases || []; state.expenses = state.expenses || []; state.payments = state.payments || []; state.seasons = state.seasons || [];
   var syncT = null;
-  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  function persist(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function save(){ persist(); if (state.cloud && state.cloud.on) cloudKick();
     if (state.sync && state.sync.auto && state.sync.url) { clearTimeout(syncT); syncT = setTimeout(function(){ syncNow(); }, 1500); } }
 
   function num(v){
@@ -695,6 +768,7 @@ h3{font-size:1rem;margin:16px 0 6px}
     licensed = true; licName = name;
     $("gate").hidden = true; $("appWrap").hidden = false;
     $("licLine").textContent = "مرخّص لـ: " + name;
+    try { cloudBoot(); } catch (e) {}
   }
   async function checkLicense(){
     var id = getDeviceId();
@@ -745,7 +819,7 @@ h3{font-size:1rem;margin:16px 0 6px}
         if (state.selected === t) state.selected = nv;
         state.types[i] = nv; save(); renderTypes(); render();
       });
-      var del = document.createElement("button"); del.type = "button"; del.className = "danger small"; del.textContent = "حذف";
+      var del = document.createElement("button"); del.type = "button"; del.className = "danger small"; del.textContent = "حذف"; del.setAttribute("data-act", "del");
       del.addEventListener("click", function(){
         if (state.types.length <= 1) { say("لازم يبقى نوع واحد على الأقل."); return; }
         guardDel("حذف النوع «" + t + "»", function(){ var ix = state.types.indexOf(t); if (ix >= 0 && state.types.length > 1) { state.types.splice(ix, 1); save(); renderTypes(); loadPrice(); } });
@@ -818,21 +892,32 @@ h3{font-size:1rem;margin:16px 0 6px}
 
   $("add").addEventListener("click", function(){
     if (!licensed) return;
+    if (!can("add")) { say("ليس لديك صلاحية إضافة مبيعات."); return; }
     var c = calc();
     if (c.price <= 0) { say("اكتب سعر الطن أولاً."); $("price").focus(); return; }
     if (c.tons <= 0) { say(state.mode === "qty" ? "اكتب الكمية أولاً." : "اكتب المبلغ أولاً."); return; }
     var customer = $("customer").value.trim() || "زبون عام";
+    var exC = (customer !== "زبون عام" && state.warnDup !== false) ? findCustomer(customer) : null;
+    if (exC && !addConfirmed) {
+      askChoice("⚠️ الاسم موجود مسبقاً", "الزبون «" + exC.name + "» مسجَّل عندك (" + exC.n + " عملية" + (exC.rem > 0 ? "، دين " + fmt(exC.rem) + " $" : "") + "). هل هذا نفس الزبون؟", [
+        { t: "✔ نعم، نفس الزبون", cls: "primary", fn: function(){ addConfirmed = true; $("add").click(); } },
+        { t: "لا، شخص آخر (أعدّل الاسم)", fn: function(){ $("customer").focus(); $("customer").select(); } },
+        { t: "إلغاء" }]);
+      return;
+    }
+    if (exC) customer = exC.name;
+    addConfirmed = false;
     var payType = state.isDebt ? "دين" : "نقدي";
     var paid = state.isDebt ? num($("paidAmt").value) : c.amount;
     var remaining = state.isDebt ? Math.max(0, c.amount - paid) : 0;
     state.rows.push({
-      date: today(), customer: customer, type: state.selected, payType: payType,
+      date: today(), time: nowTime(), customer: customer, type: state.selected, payType: payType,
       price: c.price, tons: r(c.tons, 5), kg: r(c.tons * 1000, 3),
       gross: r(c.gross), disc: r(c.disc), amount: r(c.amount), paid: r(paid), remaining: r(remaining), method: saleMethod
     });
     state.prices[state.selected] = c.price;
     save(); render();
-    ["qty","amt","paidAmt","customer","disc"].forEach(function(id){ $(id).value = ""; }); setMethod("كاش"); calc(); say("تمت الإضافة.");
+    ["qty","amt","paidAmt","customer","disc"].forEach(function(id){ $(id).value = ""; }); setMethod("كاش"); custWarn(); calc(); say("تمت الإضافة.");
   });
 
   /* ---------- list & search ---------- */
@@ -847,27 +932,27 @@ h3{font-size:1rem;margin:16px 0 6px}
     var filtered = state.rows.filter(function(x){
       return !query || x.customer.toLowerCase().indexOf(query) >= 0 || x.type.toLowerCase().indexOf(query) >= 0;
     });
-    if (!filtered.length) tb.innerHTML = '<tr><td class="empty" colspan="12">لا توجد نتائج مطابقة للبحث أو القائمة فارغة.</td></tr>';
+    if (!filtered.length) tb.innerHTML = '<tr><td class="empty" colspan="13">لا توجد نتائج مطابقة للبحث أو القائمة فارغة.</td></tr>';
     filtered.forEach(function(x, idx){
       var realIndex = state.rows.indexOf(x);
       sT += x.tons; sD += (x.disc || 0); sA += x.amount; sPaid += (x.paid || 0); sRem += (x.remaining || 0);
       var tr = document.createElement("tr");
-      var cols = [idx + 1, x.date, x.customer + (x.edits && x.edits.length ? " ✏️" : ""), x.type, x.payType + (x.method === "شام كاش" ? " · شام كاش" : ""), fmt(x.price), fmt(x.tons, 5), fmt(x.disc || 0), fmt(x.amount), fmt(x.paid || 0), fmt(x.remaining || 0)];
+      var cols = [idx + 1, dt(x), x.customer + (x.edits && x.edits.length ? " ✏️" : ""), x.type, x.payType + (x.method === "شام كاش" ? " · شام كاش" : ""), fmt(x.price), fmt(x.tons, 5), fmt(kgOf(x), 3), fmt(x.disc || 0), fmt(x.amount), fmt(x.paid || 0), fmt(x.remaining || 0)];
       cols.forEach(function(c, k){
         var td = document.createElement("td"), cl = [];
         if (k > 4) cl.push("n");
-        if ((k === 4 && x.payType === "دين") || (k === 10 && (x.remaining || 0) > 0)) cl.push("debt");
+        if ((k === 4 && x.payType === "دين") || (k === 11 && (x.remaining || 0) > 0)) cl.push("debt");
         td.className = cl.join(" "); td.textContent = c; tr.appendChild(td);
       });
       var td = document.createElement("td");
-      var b = document.createElement("button"); b.type = "button"; b.className = "danger"; b.textContent = "حذف";
+      var b = document.createElement("button"); b.type = "button"; b.className = "danger"; b.textContent = "حذف"; b.setAttribute("data-act", "del");
       b.addEventListener("click", function(){ guardDel("حذف عملية بيع «" + x.customer + "»", function(){ var ix = state.rows.indexOf(x); if (ix >= 0) { state.rows.splice(ix, 1); save(); render(); } }); });
-      var eb = document.createElement("button"); eb.type = "button"; eb.textContent = "✏️ تعديل";
+      var eb = document.createElement("button"); eb.type = "button"; eb.textContent = "✏️ تعديل"; eb.setAttribute("data-act", "edit");
       eb.addEventListener("click", function(){ guardEdit("تعديل فاتورة «" + x.customer + "»", function(){ openEdit(x); }); });
       td.appendChild(eb); td.appendChild(document.createTextNode(" ")); td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
     });
     $("foot").innerHTML = filtered.length
-      ? '<tr><td colspan="6">المجموع</td><td class="n">' + fmt(sT, 5) + '</td><td class="n">' + fmt(sD) + '</td><td class="n">' + fmt(sA) + '</td><td class="n">' + fmt(sPaid) + '</td><td class="n' + (sRem > 0 ? ' debt' : '') + '">' + fmt(sRem) + '</td><td></td></tr>' : "";
+      ? '<tr><td colspan="6">المجموع</td><td class="n">' + fmt(sT, 5) + '</td><td class="n">' + fmt(r(sT * 1000, 3), 3) + '</td><td class="n">' + fmt(sD) + '</td><td class="n">' + fmt(sA) + '</td><td class="n">' + fmt(sPaid) + '</td><td class="n' + (sRem > 0 ? ' debt' : '') + '">' + fmt(sRem) + '</td><td></td></tr>' : "";
     $("count").textContent = state.rows.length ? "(" + state.rows.length + ")" : "";
     var sel = $("invCust"), cur = sel.value; sel.innerHTML = "";
     var cs = []; state.rows.forEach(function(x){ if (cs.indexOf(x.customer) < 0) cs.push(x.customer); });
@@ -893,7 +978,7 @@ h3{font-size:1rem;margin:16px 0 6px}
 
   /* ---------- Export ---------- */
   var HEAD = ["#","التاريخ","اسم الزبون","النوع","طريقة الدفع","سعر الطن ($)","الكمية (طن)","الخصم ($)","المبلغ بعد الخصم ($)","المدفوع ($)","المتبقي ($)"];
-  function rowAoa(x, i){ return [i + 1, x.date, x.customer, x.type, x.payType + (x.method === "شام كاش" ? " - شام كاش" : ""), x.price, x.tons, x.disc || 0, x.amount, x.paid || 0, x.remaining || 0]; }
+  function rowAoa(x, i){ return [i + 1, dt(x), x.customer, x.type, x.payType + (x.method === "شام كاش" ? " - شام كاش" : ""), x.price, x.tons, x.disc || 0, x.amount, x.paid || 0, x.remaining || 0]; }
   function salesAoa(rows){ return [HEAD].concat(rows.map(rowAoa)); }
   function table(){
     var out = salesAoa(state.rows), sT = 0, sD = 0, sA = 0, sP = 0, sR = 0;
@@ -931,7 +1016,7 @@ h3{font-size:1rem;margin:16px 0 6px}
   }
 
   /* ----- Excel workbook ----- */
-  function paysAoa(){ return [["التاريخ","الزبون","المبلغ المسدّد ($)","الوسيلة"]].concat((state.payments || []).map(function(p){ return [p.date, p.customer, p.amount, p.m || "كاش"]; })); }
+  function paysAoa(){ return [["التاريخ","الزبون","المبلغ المسدّد ($)","الوسيلة"]].concat((state.payments || []).map(function(p){ return [dt(p), p.customer, p.amount, p.m || "كاش"]; })); }
   function sheet(aoa, wch, filter){
     var ws = XLSX.utils.aoa_to_sheet(aoa);
     ws["!cols"] = (wch || []).map(function(w){ return { wch: w }; });
@@ -943,7 +1028,7 @@ h3{font-size:1rem;margin:16px 0 6px}
     var S = "'المبيعات'!", cw = [5,12,20,14,12,14,14,12,18,14,14];
     var cu = function(c){ return 'SUMIF(' + S + 'C:C,"*"&B5&"*",' + S + c + ':' + c + ')'; };
     var ty = function(c){ return 'SUMIF(' + S + 'D:D,"*"&B10&"*",' + S + c + ':' + c + ')'; };
-    var names = ["المبيعات", "الدين", "التسديدات"], invSheets = [];
+    var names = ["المبيعات", "الدين", "التسديدات", "الزبائن", "بحث زبون"], invSheets = [];
     if (invUser) {
       [["جرد يومي","day"],["جرد أسبوعي","week"],["جرد شهري","month"],["جرد الموسم","season"],["جرد مخصص","manual"]].forEach(function(p){ invSheets.push(p); names.push(p[0]); });
       names.push("المواسم"); names.push("المشتريات"); names.push("المصروفات");
@@ -961,14 +1046,16 @@ h3{font-size:1rem;margin:16px 0 6px}
     XLSX.utils.book_append_sheet(wb, wsH, "الرئيسية");
     XLSX.utils.book_append_sheet(wb, sheet(salesAoa(state.rows), cw, true), "المبيعات");
     XLSX.utils.book_append_sheet(wb, sheet(salesAoa(state.rows.filter(function(x){ return (x.remaining || 0) > 0; })), cw, true), "الدين");
-    XLSX.utils.book_append_sheet(wb, sheet(paysAoa(), [14,22,14,12], true), "التسديدات");
+    XLSX.utils.book_append_sheet(wb, sheet(paysAoa(), [18,22,14,12], true), "التسديدات");
+    XLSX.utils.book_append_sheet(wb, sheet(custAoa(), [24,16,24,12,14,16,14,14,18], true), "الزبائن");
+    XLSX.utils.book_append_sheet(wb, searchSheet(), "بحث زبون");
     invSheets.forEach(function(p){ XLSX.utils.book_append_sheet(wb, sheet(invAoa(rowsFor(p[1])), [18,14,14,12,14,14,14]), p[0]); });
     if (invUser) {
       var se = [["الموسم","من","إلى","عدد العمليات","الكمية (طن)","الصافي ($)","الدين ($)"]];
       state.seasons.forEach(function(x){ var t = 0, a = 0, d = 0; x.rows.forEach(function(y){ t += y.tons; a += y.amount; d += (y.remaining || 0); }); se.push([x.name, x.from, x.to, x.rows.length, r(t,5), r(a), r(d)]); });
       XLSX.utils.book_append_sheet(wb, sheet(se, [22,12,12,14,14,14,14]), "المواسم");
-      XLSX.utils.book_append_sheet(wb, sheet([["التاريخ","الصنف","المورّد","الكمية (طن)","سعر الطن ($)","الإجمالي ($)","الدفع"]].concat(state.purchases.map(function(b){ return [b.date, b.type, b.supplier || "", b.tons, b.priceTon, b.total, b.method || "كاش"]; })), [12,16,18,14,14,14,12], true), "المشتريات");
-      XLSX.utils.book_append_sheet(wb, sheet([["التاريخ","البند","الوصف","المبلغ ($)","الدفع"]].concat(state.expenses.map(function(e){ return [e.date, e.cat, e.desc || "", e.amount, e.method || "كاش"]; })), [12,16,24,12,12], true), "المصروفات");
+      XLSX.utils.book_append_sheet(wb, sheet([["التاريخ","الصنف","المورّد","الكمية (طن)","سعر الطن ($)","الإجمالي ($)","الدفع"]].concat(state.purchases.map(function(b){ return [dt(b), b.type, b.supplier || "", b.tons, b.priceTon, b.total, b.method || "كاش"]; })), [12,16,18,14,14,14,12], true), "المشتريات");
+      XLSX.utils.book_append_sheet(wb, sheet([["التاريخ","البند","الوصف","المبلغ ($)","الدفع"]].concat(state.expenses.map(function(e){ return [dt(e), e.cat, e.desc || "", e.amount, e.method || "كاش"]; })), [12,16,24,12,12], true), "المصروفات");
     }
     return XLSX.write(wb, { bookType: "xlsx", type: "array" });
   }
@@ -1088,27 +1175,28 @@ h3{font-size:1rem;margin:16px 0 6px}
   function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   $("invScope").addEventListener("change", function(){ var v = this.value; $("invCustBox").hidden = v !== "cust"; $("invNBox").hidden = v !== "n"; });
   $("invBtn").addEventListener("click", async function(){
+    if (!can("exp")) { say("ليس لديك صلاحية إصدار الفواتير."); return; }
     if (!licensed) return;
     var sc = $("invScope").value, rows = state.rows.slice(), title = "فاتورة كامل المبيعات", showC = true, tag = "كامل-المبيعات";
     if (sc === "cust") { var cn = $("invCust").value; rows = rows.filter(function(x){ return x.customer === cn; }); title = "فاتورة الزبون: " + cn; showC = false; tag = cn.replace(/[\\\/:*?"<>|\s]+/g, "-"); }
     else if (sc === "n") { var n = Math.max(1, Math.floor(num($("invN").value)) || 1); rows = rows.slice(-n); title = "فاتورة آخر " + rows.length + " عملية"; tag = "آخر-" + rows.length; }
     if (!rows.length) { say("لا توجد مبيعات لهذه الفاتورة."); return; }
     var sT = 0, sD = 0, sA = 0, sP = 0, sR = 0, trs = [];
-    var head = '<thead><tr><th>#</th><th>التاريخ</th>' + (showC ? '<th>الزبون</th>' : '') + '<th>النوع</th><th>الدفع</th><th>سعر الطن $</th><th>الكمية (طن)</th><th>الخصم $</th><th>الصافي $</th><th>المدفوع $</th><th>الباقي $</th></tr></thead>';
+    var head = '<thead><tr><th>#</th><th>التاريخ</th>' + (showC ? '<th>الزبون</th>' : '') + '<th>النوع</th><th>الدفع</th><th>سعر الطن $</th><th>الكمية (طن)</th><th>الكمية (كغ)</th><th>الخصم $</th><th>الصافي $</th><th>المدفوع $</th><th>الباقي $</th></tr></thead>';
     rows.forEach(function(x, i){
       sT += x.tons; sD += (x.disc || 0); sA += x.amount; sP += (x.paid || 0); sR += (x.remaining || 0);
-      trs.push('<tr><td>' + (i + 1) + '</td><td>' + x.date + '</td>' + (showC ? '<td>' + esc(x.customer) + '</td>' : '') + '<td>' + esc(x.type) + '</td><td' + (x.payType === "دين" ? ' class="d"' : '') + '>' + esc(x.payType) + '</td><td>' + fmt(x.price) + '</td><td>' + fmt(x.tons, 5) + '</td><td>' + fmt(x.disc || 0) + '</td><td>' + fmt(x.amount) + '</td><td>' + fmt(x.paid || 0) + '</td><td' + ((x.remaining || 0) > 0 ? ' class="d"' : '') + '>' + fmt(x.remaining || 0) + '</td></tr>');
+      trs.push('<tr><td>' + (i + 1) + '</td><td>' + dt(x) + '</td>' + (showC ? '<td>' + esc(x.customer) + '</td>' : '') + '<td>' + esc(x.type) + '</td><td' + (x.payType === "دين" ? ' class="d"' : '') + '>' + esc(x.payType) + '</td><td>' + fmt(x.price) + '</td><td>' + fmt(x.tons, 5) + '</td><td>' + fmt(kgOf(x), 3) + '</td><td>' + fmt(x.disc || 0) + '</td><td>' + fmt(x.amount) + '</td><td>' + fmt(x.paid || 0) + '</td><td' + ((x.remaining || 0) > 0 ? ' class="d"' : '') + '>' + fmt(x.remaining || 0) + '</td></tr>');
     });
-    var foot = '<tfoot><tr><th colspan="' + (showC ? 6 : 5) + '">المجموع</th><th>' + fmt(sT, 5) + '</th><th>' + fmt(sD) + '</th><th>' + fmt(sA) + '</th><th>' + fmt(sP) + '</th><th' + (sR > 0 ? ' class="d"' : '') + '>' + fmt(sR) + '</th></tr></tfoot>';
+    var foot = '<tfoot><tr><th colspan="' + (showC ? 6 : 5) + '">المجموع</th><th>' + fmt(sT, 5) + '</th><th>' + fmt(r(sT * 1000, 3), 3) + '</th><th>' + fmt(sD) + '</th><th>' + fmt(sA) + '</th><th>' + fmt(sP) + '</th><th' + (sR > 0 ? ' class="d"' : '') + '>' + fmt(sR) + '</th></tr></tfoot>';
     var top = '<div class="ih"><h1>مركز قشور الضاهر</h1><p>' + esc(title) + '</p><p>التاريخ: ' + today() + '</p></div>';
     var bottom = '<p class="ft">برمجة وتطوير: د. عبدالله صالح — جميع الحقوق محفوظة</p>';
     var items = rows.map(function(x, i){
-      var cells = [String(i + 1), x.date]; if (showC) cells.push(x.customer);
-      cells.push(x.type, x.payType, fmt(x.price), fmt(x.tons, 5), fmt(x.disc || 0), fmt(x.amount), fmt(x.paid || 0), fmt(x.remaining || 0));
+      var cells = [String(i + 1), dt(x)]; if (showC) cells.push(x.customer);
+      cells.push(x.type, x.payType, fmt(x.price), fmt(x.tons, 5), fmt(kgOf(x), 3), fmt(x.disc || 0), fmt(x.amount), fmt(x.paid || 0), fmt(x.remaining || 0));
       var red = cells.map(function(){ return false; }); red[showC ? 4 : 3] = x.payType === "دين"; red[cells.length - 1] = (x.remaining || 0) > 0;
       return { cells: cells, red: red };
     });
-    items.push({ tot: true, span: showC ? 6 : 5, cells: ["المجموع", fmt(sT, 5), fmt(sD), fmt(sA), fmt(sP), fmt(sR)], red: [false, false, false, false, false, sR > 0] });
+    items.push({ tot: true, span: showC ? 6 : 5, cells: ["المجموع", fmt(sT, 5), fmt(r(sT * 1000, 3), 3), fmt(sD), fmt(sA), fmt(sP), fmt(sR)], red: [false, false, false, false, false, false, sR > 0] });
     var btn = this, label = btn.textContent; btn.disabled = true; btn.textContent = "جارٍ إنشاء الفاتورة...";
     var box = $("invOut"); box.hidden = true; box.innerHTML = "";
     try {
@@ -1138,9 +1226,9 @@ h3{font-size:1rem;margin:16px 0 6px}
   var FONT = "QFont, 'Geeza Pro', 'Noto Naskh Arabic', 'Segoe UI', Tahoma, Arial, sans-serif";
   function invCanvases(title, showC, items){
     var W = 842, H = 595, M = 28, S = 3, RH = 22, HH = 24, FT = 22, TOPB = 80;
-    var cols = [["#", 28, "c"], ["التاريخ", 70, "c"]];
+    var cols = [["#", 28, "c"], ["التاريخ والوقت", 100, "c"]];
     if (showC) cols.push(["الزبون", 120, "r"]);
-    cols = cols.concat([["النوع", 84, "r"], ["الدفع", 46, "c"], ["سعر الطن $", 64, "c"], ["الكمية (طن)", 74, "c"], ["الخصم $", 58, "c"], ["الصافي $", 72, "c"], ["المدفوع $", 64, "c"], ["الباقي $", 64, "c"]]);
+    cols = cols.concat([["النوع", 84, "r"], ["الدفع", 46, "c"], ["سعر الطن $", 64, "c"], ["الكمية (طن)", 70, "c"], ["الكمية (كغ)", 70, "c"], ["الخصم $", 54, "c"], ["الصافي $", 72, "c"], ["المدفوع $", 64, "c"], ["الباقي $", 64, "c"]]);
     var sum = 0; cols.forEach(function(c){ sum += c[1]; });
     var k = (W - 2 * M) / sum; cols.forEach(function(c){ c[1] = c[1] * k; });
     function txt(c, t, x, y, size, bold, color, align, maxW){
@@ -1263,7 +1351,7 @@ h3{font-size:1rem;margin:16px 0 6px}
     var ul = $("userList"); ul.innerHTML = "";
     state.users.forEach(function(u, i){
       var ln = document.createElement("div"); ln.className = "line"; var sp = document.createElement("span"); sp.textContent = u.n + (i === 0 ? " (المدير)" : "") + (invUser && invUser.n === u.n ? " (أنت)" : ""); ln.appendChild(sp);
-      var b = document.createElement("button"); b.type = "button"; b.className = "danger small"; b.textContent = "حذف";
+      var b = document.createElement("button"); b.type = "button"; b.className = "danger small"; b.textContent = "حذف"; b.setAttribute("data-act", "del");
       b.disabled = i === 0 || (invUser && invUser.n === u.n);
       b.addEventListener("click", function(){ guardDel("حذف المستخدم «" + u.n + "»", function(){ var ix = state.users.indexOf(u); if (ix > 0) { state.users.splice(ix, 1); save(); renderInv(); } }); });
       ln.appendChild(b); ul.appendChild(ln);
@@ -1295,6 +1383,7 @@ h3{font-size:1rem;margin:16px 0 6px}
   $("payCust").addEventListener("change", showPayInfo);
   function custDebt(c){ var t = 0; state.rows.forEach(function(x){ if (x.customer === c) t += (x.remaining || 0); }); return r(t); }
   function applyPayment(c, a, m){
+    if (!can("pay")) { say("ليس لديك صلاحية تسجيل التسديدات."); return false; }
     var total = custDebt(c);
     if (!c || total <= 0) { say("لا توجد ديون على هذا الزبون."); return false; }
     if (a <= 0) { say("اكتب المبلغ المسدّد."); return false; }
@@ -1304,7 +1393,7 @@ h3{font-size:1rem;margin:16px 0 6px}
       if (left <= 0 || x.customer !== c || (x.remaining || 0) <= 0) return;
       var p = Math.min(left, x.remaining); x.paid = r((x.paid || 0) + p); x.paidLater = r((x.paidLater || 0) + p); x.remaining = r(x.remaining - p); left = r(left - p);
     });
-    state.payments = state.payments || []; state.payments.push({ date: today(), customer: c, amount: r(a), m: m || "كاش" });
+    state.payments = state.payments || []; state.payments.push({ date: today(), time: nowTime(), customer: c, amount: r(a), m: m || "كاش" });
     save(); render(); say("تم تسجيل تسديد " + fmt(a) + " $ من «" + c + "» (يُخصم من أقدم دين أولاً).");
     return true;
   }
@@ -1327,6 +1416,8 @@ function doPost(e) {
   put_(ss, "المبيعات", d.sales, true);
   put_(ss, "الدين", d.debt, true);
   put_(ss, "التسديدات", d.pays, false);
+  put_(ss, "الزبائن", d.custs, false);
+  search_(ss);
   home_(ss, d);
   return ContentService.createTextOutput("ok");
 }
@@ -1342,6 +1433,28 @@ function put_(ss, name, rows, redLast) {
   sh.getRange(1, 1, 1, w).setFontWeight("bold").setBackground("#e2efe8");
   sh.setFrozenRows(1);
   if (redLast && rows.length > 1) sh.getRange(2, w, rows.length - 1, 1).setFontColor("#b3382c");
+}
+
+function search_(ss) {
+  var sh = ss.getSheetByName("بحث زبون");
+  if (sh) return;
+  sh = ss.insertSheet("بحث زبون");
+  sh.setRightToLeft(true);
+  var S = "'المبيعات'!";
+  sh.getRange("A1").setValue("🔎 بحث عن زبون").setFontWeight("bold").setFontSize(14);
+  sh.getRange("A3").setValue("اكتب اسم الزبون (أو جزء منه) ◄");
+  sh.getRange("B3").setBackground("#fff2a8");
+  sh.getRange("A5").setValue("عدد العمليات");
+  sh.getRange("A6").setValue("إجمالي مشترياته ($)");
+  sh.getRange("A7").setValue("إجمالي ما دفعه ($)");
+  sh.getRange("A8").setValue("إجمالي الدين عليه ($)");
+  sh.getRange("B5").setFormula("=COUNTIF(" + S + 'C2:C,"*"&B3&"*")');
+  sh.getRange("B6").setFormula("=SUMIF(" + S + 'C2:C,"*"&B3&"*",' + S + "I2:I)");
+  sh.getRange("B7").setFormula("=SUMIF(" + S + 'C2:C,"*"&B3&"*",' + S + "J2:J)");
+  sh.getRange("B8").setFormula("=SUMIF(" + S + 'C2:C,"*"&B3&"*",' + S + "K2:K)").setFontColor("#b3382c");
+  sh.getRange("A10:K10").setValues([["#", "التاريخ والوقت", "الزبون", "النوع", "طريقة الدفع", "سعر الطن $", "الكمية (طن)", "الخصم $", "الصافي $", "المدفوع $", "المتبقي $"]]).setFontWeight("bold").setBackground("#e2efe8");
+  sh.getRange("A11").setFormula('=IFERROR(FILTER(' + S + 'A2:K, ISNUMBER(SEARCH($B$3, ' + S + 'C2:C)), ' + S + 'C2:C<>""), "لا توجد نتائج")');
+  sh.setColumnWidth(1, 200); sh.setColumnWidth(2, 150);
 }
 
 function home_(ss, d) {
@@ -1383,7 +1496,7 @@ function home_(ss, d) {
     return JSON.stringify({ key: state.sync.key, licensed: licName, date: today(),
       sales: salesAoa(state.rows),
       debt: salesAoa(state.rows.filter(function(x){ return (x.remaining || 0) > 0; })),
-      pays: paysAoa() });
+      pays: paysAoa(), custs: custAoa() });
   }
   async function syncNow(){
     var u = state.sync.url, m = $("syncMsg");
@@ -1470,6 +1583,7 @@ function home_(ss, d) {
   }
   function closeDlg(){ $("dlg").hidden = true; dlgFn = null; $("dlgPass").value = ""; }
   function guardDel(label, fn){
+    if (cloudOn() && !state.cloud.mgr) { if (!can("del")) { say("ليس لديك صلاحية الحذف."); return; } fn(); return; }
     if (state.delMode === "free") { fn(); return; }
     var a = adminUser();
     if (!a) { say("المسح محمي بكلمة سر المدير ولا يوجد حساب مدير بعد. أنشئ حساب المدير من قسم الجرد، أو اختر «بدون كلمة سر» من وضع المسح."); return; }
@@ -1591,7 +1705,7 @@ function home_(ss, d) {
     return types.map(function(t){ var inn = cm[t] ? cm[t].t : 0, out = sold[t] || 0; return { t: t, inn: inn, out: out, left: inn - out, avg: cm[t] && cm[t].t > 0 ? cm[t].c / cm[t].t : 0 }; });
   }
   function delBtn(label, fn){
-    var b = document.createElement("button"); b.type = "button"; b.className = "danger"; b.textContent = "حذف";
+    var b = document.createElement("button"); b.type = "button"; b.className = "danger"; b.textContent = "حذف"; b.setAttribute("data-act", "del");
     b.addEventListener("click", function(){ guardDel(label, fn); }); return b;
   }
   function fillTd(tr, cells, numFrom){
@@ -1622,7 +1736,7 @@ function home_(ss, d) {
     if (!bl.length) bb.innerHTML = '<tr><td class="empty" colspan="8">لا يوجد وارد في هذه الفترة.</td></tr>';
     bl.slice().reverse().forEach(function(b){
       tot += b.total; tt += b.tons; var tr = document.createElement("tr");
-      fillTd(tr, [b.date, b.type, b.supplier || "—", fmt(b.tons, 5), fmt(b.priceTon), fmt(b.total), b.method || "كاش"], 3);
+      fillTd(tr, [dt(b), b.type, b.supplier || "—", fmt(b.tons, 5), fmt(b.priceTon), fmt(b.total), b.method || "كاش"], 3);
       tr.children[6].className = "";
       var td = document.createElement("td"); td.appendChild(delBtn("حذف وارد «" + b.type + "»", function(){ var ix = state.purchases.indexOf(b); if (ix >= 0) { state.purchases.splice(ix, 1); save(); renderBuy(); calc(); } })); tr.appendChild(td); bb.appendChild(tr);
     });
@@ -1632,7 +1746,7 @@ function home_(ss, d) {
     if (!el.length) eb.innerHTML = '<tr><td class="empty" colspan="6">لا توجد مصروفات في هذه الفترة.</td></tr>';
     el.slice().reverse().forEach(function(e){
       et += e.amount; var tr = document.createElement("tr");
-      fillTd(tr, [e.date, e.cat, e.desc || "—", fmt(e.amount), e.method || "كاش"], 3);
+      fillTd(tr, [dt(e), e.cat, e.desc || "—", fmt(e.amount), e.method || "كاش"], 3);
       tr.children[3].className = "n"; tr.children[4].className = "";
       var td = document.createElement("td"); td.appendChild(delBtn("حذف مصروف «" + e.cat + "»", function(){ var ix = state.expenses.indexOf(e); if (ix >= 0) { state.expenses.splice(ix, 1); save(); renderBuy(); } })); tr.appendChild(td); eb.appendChild(tr);
     });
@@ -1658,13 +1772,13 @@ function home_(ss, d) {
     var c = buyCalc();
     if (c.pt <= 0) { say("اكتب سعر الجملة."); $("bPrice").focus(); return; }
     if (c.tons <= 0) { say("اكتب الكمية."); $("bQty").focus(); return; }
-    state.purchases.push({ date: $("bDate").value || today(), type: $("bType").value, supplier: $("bSupplier").value.trim(), tons: r(c.tons, 5), kg: r(c.tons * 1000, 3), priceTon: r(c.pt), total: r(c.tons * c.pt), method: $("bMethod").value });
+    state.purchases.push({ date: $("bDate").value || today(), time: nowTime(), type: $("bType").value, supplier: $("bSupplier").value.trim(), tons: r(c.tons, 5), kg: r(c.tons * 1000, 3), priceTon: r(c.pt), total: r(c.tons * c.pt), method: $("bMethod").value });
     save(); $("bQty").value = ""; $("bSupplier").value = ""; buyCalc(); renderBuy(); calc(); say("تمت إضافة الوارد.");
   });
   $("eAdd").addEventListener("click", function(){
     if (!licensed || !invUser) return;
     var a = num($("eAmt").value); if (a <= 0) { say("اكتب مبلغ المصروف."); $("eAmt").focus(); return; }
-    state.expenses.push({ date: $("eDate").value || today(), cat: $("eCat").value, desc: $("eDesc").value.trim(), amount: r(a), method: $("eMethod").value });
+    state.expenses.push({ date: $("eDate").value || today(), time: nowTime(), cat: $("eCat").value, desc: $("eDesc").value.trim(), amount: r(a), method: $("eMethod").value });
     save(); $("eAmt").value = ""; $("eDesc").value = ""; renderBuy(); say("تمت إضافة المصروف.");
   });
 
@@ -1727,7 +1841,7 @@ function home_(ss, d) {
       '<button id="cdPay" class="primary" type="button" style="margin-top:8px">تسجيل التسديد</button>' +
       '<div class="actions"><button id="cdInv" type="button">🧾 فاتورة PDF للزبون</button><button id="cdWa" type="button">💬 تذكير بالدين (واتساب)</button></div>' +
       '<h3>عمليات الزبون</h3><input id="cdSearch" placeholder="بحث في عمليات الزبون (صنف، تاريخ، دين، شام كاش...)" autocomplete="off">' +
-      '<div class="tablewrap" style="margin-top:8px"><table style="min-width:660px"><thead><tr><th>التاريخ</th><th>النوع</th><th>الكمية (طن)</th><th>الدفع</th><th>المبلغ $</th><th>المدفوع $</th><th class="debt">الباقي $</th><th></th></tr></thead><tbody id="cdRows"></tbody><tfoot id="cdFoot"></tfoot></table></div>' +
+      '<div class="tablewrap" style="margin-top:8px"><table style="min-width:740px"><thead><tr><th>التاريخ</th><th>النوع</th><th>الكمية (طن)</th><th>الكمية (كغ)</th><th>الدفع</th><th>المبلغ $</th><th>المدفوع $</th><th class="debt">الباقي $</th><th></th></tr></thead><tbody id="cdRows"></tbody><tfoot id="cdFoot"></tfoot></table></div>' +
       '<h3>التسديدات</h3><div id="cdPays"></div><p class="tip" id="cdOld" style="margin-top:8px"></p>' +
       '<button id="cdDel" class="danger small" type="button" style="margin-top:10px">حذف الزبون</button>';
     $("cdName").value = name; $("cdPhone").value = m.phone || ""; $("cdNotes").value = m.notes || "";
@@ -1777,25 +1891,25 @@ function home_(ss, d) {
       '<div class="kv big"><span>الدين الحالي</span><b class="' + (T.r > 0 ? "debt" : "good") + '">' + fmt(T.r) + ' $</b></div>';
     var tb = $("cdRows"); tb.innerHTML = "";
     var shown = rows.filter(function(x){ return !q || [x.date, x.type, x.payType, x.method || "كاش", fmt(x.amount), (x.remaining > 0 ? "دين" : "")].join(" ").toLowerCase().indexOf(q) >= 0; });
-    if (!shown.length) tb.innerHTML = '<tr><td class="empty" colspan="8">لا توجد عمليات مطابقة.</td></tr>';
+    if (!shown.length) tb.innerHTML = '<tr><td class="empty" colspan="9">لا توجد عمليات مطابقة.</td></tr>';
     var sT = 0, sA = 0, sP = 0, sR = 0;
     shown.slice().reverse().forEach(function(x){
       sT += x.tons; sA += x.amount; sP += (x.paid || 0); sR += (x.remaining || 0);
       var tr = document.createElement("tr");
-      fillTd(tr, [x.date, x.type + (x.edits && x.edits.length ? " ✏️" : ""), fmt(x.tons, 5), x.payType + (x.method === "شام كاش" ? " · شام كاش" : ""), fmt(x.amount), fmt(x.paid || 0), fmt(x.remaining || 0)], 2);
-      tr.children[3].className = x.payType === "دين" ? "debt" : ""; if ((x.remaining || 0) > 0) tr.children[6].classList.add("debt");
+      fillTd(tr, [dt(x), x.type + (x.edits && x.edits.length ? " ✏️" : ""), fmt(x.tons, 5), fmt(kgOf(x), 3), x.payType + (x.method === "شام كاش" ? " · شام كاش" : ""), fmt(x.amount), fmt(x.paid || 0), fmt(x.remaining || 0)], 2);
+      tr.children[4].className = x.payType === "دين" ? "debt" : ""; if ((x.remaining || 0) > 0) tr.children[7].classList.add("debt");
       var td = document.createElement("td");
-      var eb = document.createElement("button"); eb.type = "button"; eb.textContent = "✏️ تعديل";
+      var eb = document.createElement("button"); eb.type = "button"; eb.textContent = "✏️ تعديل"; eb.setAttribute("data-act", "edit");
       eb.addEventListener("click", function(){ guardEdit("تعديل فاتورة «" + x.customer + "»", function(){ openEdit(x); }); });
-      var db = document.createElement("button"); db.type = "button"; db.className = "danger"; db.textContent = "حذف";
+      var db = document.createElement("button"); db.type = "button"; db.className = "danger"; db.textContent = "حذف"; db.setAttribute("data-act", "del");
       db.addEventListener("click", function(){ guardDel("حذف عملية بيع «" + x.customer + "»", function(){ var ix = state.rows.indexOf(x); if (ix >= 0) { state.rows.splice(ix, 1); save(); render(); } }); });
       td.appendChild(eb); td.appendChild(document.createTextNode(" ")); td.appendChild(db); tr.appendChild(td); tb.appendChild(tr);
     });
-    $("cdFoot").innerHTML = shown.length ? '<tr><td colspan="2">المجموع</td><td class="n">' + fmt(sT, 5) + '</td><td></td><td class="n">' + fmt(sA) + '</td><td class="n">' + fmt(sP) + '</td><td class="n' + (sR > 0 ? " debt" : "") + '">' + fmt(sR) + '</td><td></td></tr>' : "";
+    $("cdFoot").innerHTML = shown.length ? '<tr><td colspan="2">المجموع</td><td class="n">' + fmt(sT, 5) + '</td><td class="n">' + fmt(r(sT * 1000, 3), 3) + '</td><td></td><td class="n">' + fmt(sA) + '</td><td class="n">' + fmt(sP) + '</td><td class="n' + (sR > 0 ? " debt" : "") + '">' + fmt(sR) + '</td><td></td></tr>' : "";
     var pb = $("cdPays"); pb.innerHTML = "";
     var pays = state.payments.filter(function(q2){ return q2.customer === c; });
     if (!pays.length) pb.innerHTML = '<p class="tip">لا توجد تسديدات مسجّلة.</p>';
-    pays.slice().reverse().forEach(function(q2){ var ln = document.createElement("div"); ln.className = "line"; ln.textContent = q2.date + " — " + fmt(q2.amount) + " $ — " + (q2.m || "كاش"); pb.appendChild(ln); });
+    pays.slice().reverse().forEach(function(q2){ var ln = document.createElement("div"); ln.className = "line"; ln.textContent = dt(q2) + " — " + fmt(q2.amount) + " $ — " + (q2.m || "كاش"); pb.appendChild(ln); });
     var oc = 0, ov = 0; state.seasons.forEach(function(se){ se.rows.forEach(function(x){ if (x.customer === c) { oc++; ov += x.amount; } }); });
     $("cdOld").textContent = oc ? "مبيعات مواسم سابقة (للاطلاع فقط): " + oc + " عملية بقيمة " + fmt(ov) + " $" : "";
     $("cdDel").disabled = !!rows.length;
@@ -1803,6 +1917,7 @@ function home_(ss, d) {
 
   /* edit one invoice (sale) */
   function guardEdit(label, fn){
+    if (cloudOn() && !state.cloud.mgr) { if (!can("edit")) { say("ليس لديك صلاحية تعديل الفواتير."); return; } fn(); return; }
     var a = adminUser();
     if (state.delMode === "free" || !a || (invUser && invUser.n === a.n)) { fn(); return; }
     askAdmin(label, fn);
@@ -1821,41 +1936,607 @@ function home_(ss, d) {
   ["edPrice","edQty","edDisc","edPaid"].forEach(function(id){ $(id).addEventListener("input", edCalc); });
   ["edUnit","edDiscType","edPay"].forEach(function(id){ $(id).addEventListener("change", edCalc); });
   function openEdit(x){
-    edRow = x; var sel = $("edType"); sel.innerHTML = "";
+    edRow = x; edRev = (cloudSync && x.id) ? cloudSync.revOf("sales", x.id) : 0; var sel = $("edType"); sel.innerHTML = "";
     var types = state.types.slice(); if (types.indexOf(x.type) < 0) types.push(x.type);
     types.forEach(function(t){ var o = document.createElement("option"); o.value = o.textContent = t; sel.appendChild(o); });
-    $("edDate").value = x.date; $("edCust").value = x.customer; sel.value = x.type; $("edPrice").value = x.price;
+    $("edDate").value = x.date; $("edTime").value = x.time || ""; $("edCust").value = x.customer; sel.value = x.type; $("edPrice").value = x.price;
     $("edUnit").value = "kg"; $("edQty").value = r(x.tons * 1000, 3); $("edDisc").value = (x.disc || 0) > 0 ? x.disc : ""; $("edDiscType").value = "usd";
     $("edPay").value = x.payType === "دين" ? "دين" : "نقدي"; $("edPaid").value = x.paid || 0; $("edMethod").value = x.method || "كاش";
     $("edErr").textContent = ""; edCalc(); $("editDlg").hidden = false;
   }
+  $("edNew").addEventListener("click", function(){
+    var x = edRow; if (!x) return;
+    if (!can("add")) { $("edErr").textContent = "ليس لديك صلاحية إضافة فواتير."; return; }
+    var v = edVals();
+    if (v.price <= 0) { $("edErr").textContent = "اكتب سعر الطن."; return; }
+    if (v.tons <= 0) { $("edErr").textContent = "اكتب الكمية."; return; }
+    if (!$("edDate").value) { $("edErr").textContent = "اختر التاريخ."; return; }
+    var tm = $("edTime").value;
+    if (!tm || (tm === (x.time || "") && $("edDate").value === x.date)) tm = nowTime();
+    state.rows.push({
+      date: $("edDate").value, time: tm, customer: $("edCust").value.trim() || "زبون عام", type: $("edType").value, payType: v.debt ? "دين" : "نقدي",
+      price: r(v.price), tons: r(v.tons, 5), kg: r(v.tons * 1000, 3), gross: r(v.gross), disc: r(v.disc), amount: r(v.amount),
+      paid: r(v.paid), remaining: r(v.rem), method: $("edMethod").value
+    });
+    $("editDlg").hidden = true; edRow = null; save(); render(); renderBuy(); say("تمت إضافة فاتورة جديدة، والفاتورة القديمة بقيت كما هي.");
+  });
   $("edCancel").addEventListener("click", function(){ $("editDlg").hidden = true; edRow = null; });
-  $("edSave").addEventListener("click", function(){
+  var edRev = 0;
+  $("edSave").addEventListener("click", function(){ doEditSave(false); });
+  function doEditSave(force){
     var x = edRow; if (!x) return;
     var v = edVals();
     if (v.price <= 0) { $("edErr").textContent = "اكتب سعر الطن."; return; }
     if (v.tons <= 0) { $("edErr").textContent = "اكتب الكمية."; return; }
     if (!$("edDate").value) { $("edErr").textContent = "اختر التاريخ."; return; }
+    if (!force && cloudSync && x.id && cloudSync.revOf("sales", x.id) !== edRev) {
+      askChoice("⚠️ الفاتورة تغيّرت", "عُدِّلت هذه الفاتورة من جهاز آخر أثناء فتح نافذة التعديل. إن حفظت الآن ستستبدل تعديله بتعديلك.", [
+        { t: "استبدال بتعديلي", cls: "primary", fn: function(){ doEditSave(true); } },
+        { t: "إلغاء وعرض آخر نسخة", fn: function(){ $("editDlg").hidden = true; var y = edRow; edRow = null; if (y) openEdit(y); } }]);
+      return;
+    }
     x.edits = x.edits || [];
-    x.edits.push({ t: new Date().toISOString(), by: invUser ? invUser.n : "", before: { date: x.date, customer: x.customer, type: x.type, price: x.price, tons: x.tons, disc: x.disc || 0, amount: x.amount, paid: x.paid || 0, remaining: x.remaining || 0, payType: x.payType, method: x.method || "كاش" } });
+    x.edits.push({ t: new Date().toISOString(), by: invUser ? invUser.n : "", before: { date: x.date, time: x.time || "", customer: x.customer, type: x.type, price: x.price, tons: x.tons, disc: x.disc || 0, amount: x.amount, paid: x.paid || 0, remaining: x.remaining || 0, payType: x.payType, method: x.method || "كاش" } });
     if (x.edits.length > 10) x.edits.shift();
-    x.date = $("edDate").value; x.customer = $("edCust").value.trim() || "زبون عام"; x.type = $("edType").value; x.price = r(v.price);
+    x.date = $("edDate").value; x.time = $("edTime").value || ""; x.customer = $("edCust").value.trim() || "زبون عام"; x.type = $("edType").value; x.price = r(v.price);
     x.tons = r(v.tons, 5); x.kg = r(v.tons * 1000, 3); x.gross = r(v.gross); x.disc = r(v.disc); x.amount = r(v.amount);
     x.payType = v.debt ? "دين" : "نقدي"; x.paid = r(v.paid); x.remaining = r(v.rem); x.method = $("edMethod").value;
     if ((x.paidLater || 0) > x.paid) x.paidLater = x.paid;
     state.prices[x.type] = state.prices[x.type] || x.price;
     $("editDlg").hidden = true; edRow = null; save(); render(); renderBuy(); say("تم تعديل الفاتورة.");
-  });
+  }
+
+  /* ---------- Time, duplicate-name warning, dialogs, Excel customer sheets ---------- */
+  var addConfirmed = false;
+  function nowTime(){ var d = new Date(); return ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+  function dt(x){ return x.date + (x.time ? " " + x.time : ""); }
+  function kgOf(x){ return r(x.tons * 1000, 3); }
+  function askChoice(title, msg, btns){
+    $("cfmT").textContent = title; $("cfmM").textContent = msg;
+    var box = $("cfmBtns"); box.innerHTML = "";
+    btns.forEach(function(b){
+      var e = document.createElement("button"); e.type = "button"; e.textContent = b.t; if (b.cls) e.className = b.cls; if (b.cls === "primary") e.style.margin = "0";
+      e.addEventListener("click", function(){ $("cfmDlg").hidden = true; if (b.fn) b.fn(); }); box.appendChild(e);
+    });
+    $("cfmDlg").hidden = false;
+  }
+  function normName(v){ return String(v || "").replace(/[\u064B-\u0652\u0640]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/\s+/g, " ").trim().toLowerCase(); }
+  function findCustomer(name){
+    var n = normName(name); if (!n) return null; var all = custAgg();
+    for (var i = 0; i < all.length; i++) if (normName(all[i].name) === n) return all[i];
+    return null;
+  }
+  function custWarn(){
+    var v = $("customer").value.trim(), ex = (v && v !== "زبون عام" && state.warnDup !== false) ? findCustomer(v) : null, el = $("custWarn");
+    if (!ex) { el.hidden = true; return; }
+    el.hidden = false;
+    el.textContent = "⚠️ الاسم «" + ex.name + "» موجود مسبقاً (" + ex.n + " عملية" + (ex.rem > 0 ? "، دين " + fmt(ex.rem) + " $" : "") + "). إن كان نفس الزبون تابع، وإن كان شخصاً آخر أضف ما يميّزه (اسم الأب أو المنطقة).";
+  }
+  $("customer").addEventListener("input", custWarn);
+  $("warnDup").checked = state.warnDup !== false;
+  $("warnDup").addEventListener("change", function(){ state.warnDup = this.checked; save(); custWarn(); });
+  $("cfmDlg").addEventListener("click", function(e){ if (e.target === this) this.hidden = true; });
+
+  function custAoa(){
+    var rows = custAgg().sort(function(a, b){ return b.rem - a.rem || a.name.localeCompare(b.name, "ar"); });
+    return [["الزبون","الهاتف","ملاحظات","عدد العمليات","الكمية (طن)","صافي المشتريات ($)","المدفوع ($)","الدين ($)","آخر عملية"]].concat(rows.map(function(c){
+      return [c.name, c.phone || "", c.notes || "", c.n, r(c.tons, 5), r(c.net), r(c.paid), r(c.rem), c.last || ""];
+    }));
+  }
+  /* صفحة بحث عن زبون داخل الإكسل: اكتب الاسم في الخانة B3 فتظهر عملياته (لا تُنشأ صفحة لكل زبون) */
+  function searchSheet(){
+    var S = "'المبيعات'!", N = 5000;
+    function rng(c){ return S + "$" + c + "$2:$" + c + "$" + N; }
+    var cond = '(' + rng("C") + '<>"")*ISNUMBER(SEARCH($B$3,' + rng("C") + '))';
+    var aoa = [["🔎 بحث عن زبون"], [], ["اكتب اسم الزبون (أو جزء منه) ◄", ""], [], ["عدد العمليات", 0], ["إجمالي مشترياته ($)", 0], ["إجمالي ما دفعه ($)", 0], ["إجمالي الدين عليه ($)", 0], [],
+      ["#","التاريخ والوقت","الزبون","النوع","طريقة الدفع","سعر الطن $","الكمية (طن)","الخصم $","الصافي $","المدفوع $","المتبقي $",""]];
+    var ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws["B5"] = { t: "n", v: 0, f: "SUMPRODUCT(" + cond + ")" };
+    ws["B6"] = { t: "n", v: 0, f: "SUMPRODUCT(" + cond + "*" + rng("I") + ")" };
+    ws["B7"] = { t: "n", v: 0, f: "SUMPRODUCT(" + cond + "*" + rng("J") + ")" };
+    ws["B8"] = { t: "n", v: 0, f: "SUMPRODUCT(" + cond + "*" + rng("K") + ")" };
+    var cols = ["B","C","D","E","F","G","H","I","J","K"];
+    for (var i = 0; i < 200; i++) {
+      (function(row){
+        ws["L" + row] = { t: "s", v: "", f: 'IFERROR(SMALL(IF(' + cond + ',ROW(' + rng("C") + ')),ROWS($L$11:L' + row + ')),"")', F: "L" + row };
+        ws["A" + row] = { t: "s", v: "", f: 'IF($L' + row + '="","",ROWS($L$11:L' + row + '))' };
+        cols.forEach(function(c){ ws[c + row] = { t: "s", v: "", f: 'IF($L' + row + '="","",INDEX(' + S + c + ':' + c + ',$L' + row + '))' }; });
+      })(11 + i);
+    }
+    ws["!ref"] = "A1:L210";
+    ws["!cols"] = [{ wch: 26 }, { wch: 18 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { hidden: true, wch: 6 }];
+    ws["!views"] = [{ rightToLeft: true }];
+    return ws;
+  }
+
+  /* ---------- Cloud (Firebase): مدير + عمال، مزامنة، صلاحيات، تنبيه التعارض ---------- */
+/*SYNC-ENGINE-START*/
+function createSync(env){
+  var S = env.state, B = env.backend, listeners = [], pend = {}, busy = false, again = false, lastErr = "", lastOk = 0, lastPending = 0;
+  function uid(){
+    var a = "abcdefghijklmnopqrstuvwxyz0123456789", o = "", r = null;
+    try { r = crypto.getRandomValues(new Uint8Array(16)); } catch (e) {}
+    for (var i = 0; i < 16; i++) o += a[(r ? r[i] : Math.floor(Math.random() * 256)) % 36];
+    return o;
+  }
+  function h53(str){
+    var h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  }
+  function hashRec(r){ return h53(JSON.stringify(r)); }
+  function find(a, id){ for (var i = 0; i < a.length; i++) if (a[i].id === id) return a[i]; return null; }
+  function idx(a, id){ for (var i = 0; i < a.length; i++) if (a[i].id === id) return i; return -1; }
+  function arrColl(key, priv){
+    return {
+      priv: priv,
+      list: function(){ return S[key] = S[key] || []; },
+      put: function(rec){
+        var a = this.list(), i = idx(a, rec.id);
+        if (i >= 0) { var o = a[i]; Object.keys(o).forEach(function(k){ delete o[k]; }); Object.assign(o, rec); return o; }
+        a.push(rec); return rec;
+      },
+      remove: function(id){ var a = this.list(), i = idx(a, id); if (i >= 0) a.splice(i, 1); }
+    };
+  }
+  var COLLS = {
+    sales: arrColl("rows", false), payments: arrColl("payments", false), customers: arrColl("customers", false),
+    purchases: arrColl("purchases", true), expenses: arrColl("expenses", true),
+    cfg: {
+      priv: false,
+      list: function(){ return [{ id: "main", types: (S.types || []).slice(), shamQR: S.shamQR || "", shamInfo: S.shamInfo || "" }]; },
+      put: function(rec){ S.types = (rec.types || []).slice(); S.shamQR = rec.shamQR || ""; S.shamInfo = rec.shamInfo || ""; },
+      remove: function(){}
+    }
+  };
+  function meta(c){ S.cm = S.cm || {}; return (S.cm[c] = S.cm[c] || {}); }
+  function active(c){ return !COLLS[c].priv || !!S.cloud.mgr; }
+  function pathOf(c){ var base = "spaces/" + S.cloud.space; return COLLS[c].priv ? base + "/priv/" + S.cloud.mgr + "/" + c : base + "/" + c; }
+  function inConflict(c, id){ return (S.conflicts || []).some(function(x){ return x.c === c && x.id === id; }); }
+  function nowIso(){ return new Date().toISOString(); }
+  function mk(j, id, rev, del){ return { id: id, j: j, rev: rev, del: !!del, by: env.deviceName(), at: nowIso() }; }
+  function snap(rec){ var j = JSON.stringify(rec); return { j: j, h: h53(j) }; }
+
+  function scan(){
+    var out = { created: [], dirty: [], dels: [] };
+    Object.keys(COLLS).forEach(function(c){
+      if (!active(c)) return;
+      var C = COLLS[c], M = meta(c), seen = {};
+      C.list().forEach(function(rec){
+        if (!rec.id) rec.id = uid();
+        seen[rec.id] = 1;
+        if (inConflict(c, rec.id)) return;
+        var m = M[rec.id], hh = hashRec(rec);
+        if (!m) out.created.push({ c: c, rec: rec });
+        else if (m.del || m.h !== hh) out.dirty.push({ c: c, rec: rec, m: m });
+      });
+      Object.keys(M).forEach(function(id){ var m = M[id]; if (!m.del && !seen[id] && !inConflict(c, id)) out.dels.push({ c: c, id: id, m: m }); });
+    });
+    return out;
+  }
+  function pendingCount(){ var s = scan(); return s.created.length + s.dirty.length + s.dels.length; }
+
+  function addConflict(c, id, kind, d){
+    if (c === "cfg") { mergeCfg(d); return; }
+    S.conflicts = S.conflicts || [];
+    var rem = { rev: d ? (d.rev || 0) : 0, j: d ? d.j : "", del: !!(d && d.del), by: d ? d.by : "", at: d ? d.at : "" };
+    var k = -1; S.conflicts.forEach(function(x, i){ if (x.c === c && x.id === id) k = i; });
+    var cf = { c: c, id: id, kind: kind, remote: rem, detected: nowIso() };
+    if (k >= 0) S.conflicts[k] = cf; else S.conflicts.push(cf);
+    env.persist(); if (env.onConflict) env.onConflict(cf);
+  }
+  function mergeCfg(d){
+    var rec; try { rec = JSON.parse(d.j); } catch (e) { return; }
+    var types = (rec.types || []).slice(); (S.types || []).forEach(function(t){ if (types.indexOf(t) < 0) types.push(t); });
+    S.types = types; if (rec.shamQR && !S.shamQR) S.shamQR = rec.shamQR; if (rec.shamInfo && !S.shamInfo) S.shamInfo = rec.shamInfo;
+    var m = meta("cfg"); m.main = { rev: d.rev || 0, h: m.main ? m.main.h : -1 };
+  }
+
+  async function pushOne(c, rec, m){
+    var sn = snap(rec), base = m ? (m.rev || 0) : 0, M = meta(c), id = rec.id, pk = c + ":" + id;
+    pend[pk] = sn;
+    try { var res = await B.runTx(pathOf(c), id, function(cur){
+      var curRev = cur ? (cur.rev || 0) : 0;
+      if (curRev !== base) {
+        if (!m && cur && !cur.del && cur.j === sn.j) return { same: true, rev: curRev };
+        return { conflict: true };
+      }
+      return { write: mk(sn.j, id, curRev + 1, false) };
+    });
+    if (res.d.write) M[id] = { rev: res.d.write.rev, h: sn.h };
+    else if (res.d.same) M[id] = { rev: res.d.rev, h: sn.h };
+    else if (res.d.conflict) addConflict(c, id, "edit", res.cur);
+    } finally { delete pend[pk]; }
+  }
+  async function pushDel(c, id, m){
+    var M = meta(c);
+    var res = await B.runTx(pathOf(c), id, function(cur){
+      var curRev = cur ? (cur.rev || 0) : 0;
+      if (cur && cur.del) return { already: true, rev: curRev };
+      if (curRev !== (m.rev || 0)) return { conflict: true };
+      return { write: mk("", id, curRev + 1, true) };
+    });
+    if (res.d.write) M[id] = { rev: res.d.write.rev, del: true };
+    else if (res.d.already) M[id] = { rev: res.d.rev, del: true };
+    else if (res.d.conflict) addConflict(c, id, "localdel", res.cur);
+  }
+  async function push(){
+    if (busy) { again = true; return false; }
+    busy = true; var ok = false;
+    try {
+      do {
+        again = false;
+        var sc = scan(), byC = {};
+        sc.created.forEach(function(x){ (byC[x.c] = byC[x.c] || []).push(x); });
+        for (var c in byC) {
+          var items = byC[c], M = meta(c);
+          if (items.length > 20) {
+            for (var i = 0; i < items.length; i += 200) {
+              var chunk = items.slice(i, i + 200), docs = [], hs = {};
+              chunk.forEach(function(x){ var sn = snap(x.rec); hs[x.rec.id] = sn.h; pend[c + ":" + x.rec.id] = sn; docs.push({ id: x.rec.id, data: mk(sn.j, x.rec.id, 1, false) }); });
+              try { await B.batchSet(pathOf(c), docs); Object.keys(hs).forEach(function(id){ M[id] = { rev: 1, h: hs[id] }; }); }
+              finally { chunk.forEach(function(x){ delete pend[c + ":" + x.rec.id]; }); }
+              env.persist();
+            }
+          } else {
+            for (var j = 0; j < items.length; j++) await pushOne(c, items[j].rec, null);
+          }
+        }
+        for (var d = 0; d < sc.dirty.length; d++) await pushOne(sc.dirty[d].c, sc.dirty[d].rec, sc.dirty[d].m);
+        for (var e = 0; e < sc.dels.length; e++) await pushDel(sc.dels[e].c, sc.dels[e].id, sc.dels[e].m);
+        env.persist();
+      } while (again);
+      lastOk = Date.now(); lastErr = ""; ok = true;
+    } catch (err) { lastErr = String(err && err.message || err); }
+    finally { busy = false; try { lastPending = pendingCount(); } catch (e2) {} env.persist(); if (env.onStatus) env.onStatus(); }
+    return ok;
+  }
+
+  function onDocs(c, changes){
+    if (!active(c)) return;
+    var C = COLLS[c], M = meta(c), changed = false, added = [], updated = [];
+    changes.forEach(function(ch){
+      var d = ch.data; if (!d || !d.id) return;
+      var id = d.id, rev = d.rev || 0, m = M[id], del = !!d.del;
+      if (m && rev <= (m.rev || 0)) return;
+      var pf = pend[c + ":" + id];
+      if (pf && !del && pf.j === d.j) { M[id] = { rev: rev, h: pf.h }; return; }
+      if (inConflict(c, id)) { addConflict(c, id, (S.conflicts.filter(function(x){ return x.c === c && x.id === id; })[0] || {}).kind || "edit", d); return; }
+      var rec = null; if (!del) { try { rec = JSON.parse(d.j); } catch (e) { return; } }
+      var loc = find(C.list(), id), clean = !!(loc && m && !m.del && hashRec(loc) === m.h);
+      if (!loc) {
+        if (m && !m.del) { if (del) M[id] = { rev: rev, del: true }; else addConflict(c, id, "localdel", d); }
+        else if (del) { M[id] = { rev: rev, del: true }; }
+        else { C.put(rec); M[id] = { rev: rev, h: hashRec(find(C.list(), id) || rec) }; changed = true; added.push({ c: c, rec: rec, by: d.by }); }
+      } else if (!m) {
+        if (!del) { C.put(rec); M[id] = { rev: rev, h: hashRec(find(C.list(), id) || rec) }; } else { C.remove(id); M[id] = { rev: rev, del: true }; }
+        changed = true;
+      } else if (clean) {
+        if (del) { C.remove(id); M[id] = { rev: rev, del: true }; }
+        else { C.put(rec); M[id] = { rev: rev, h: hashRec(find(C.list(), id) || rec) }; updated.push({ c: c, rec: rec, by: d.by }); }
+        changed = true;
+      } else addConflict(c, id, "edit", d);
+    });
+    if (changed) { env.persist(); if (env.onRemote) env.onRemote({ c: c, added: added, updated: updated, changed: true }); }
+  }
+  function start(){
+    stop();
+    Object.keys(COLLS).forEach(function(c){
+      if (!active(c)) return;
+      listeners.push(B.listen(pathOf(c), function(changes){ onDocs(c, changes); }, function(err){ lastErr = String(err && err.message || err); if (env.onStatus) env.onStatus(); }));
+    });
+  }
+  function stop(){ listeners.forEach(function(u){ try { u(); } catch (e) {} }); listeners = []; }
+  function resolve(c, id, how){
+    var list = S.conflicts || [], k = -1; list.forEach(function(x, i){ if (x.c === c && x.id === id) k = i; });
+    if (k < 0) return;
+    var cf = list[k], d = cf.remote, C = COLLS[c], M = meta(c);
+    if (how === "mine") { M[id] = M[id] || { h: -1 }; M[id].rev = d.rev; M[id].del = false; }
+    else if (d.del) { C.remove(id); M[id] = { rev: d.rev, del: true }; }
+    else { var rec = JSON.parse(d.j); C.put(rec); M[id] = { rev: d.rev, h: hashRec(find(C.list(), id) || rec) }; }
+    list.splice(k, 1); env.persist();
+    if (how !== "mine" && env.onRemote) env.onRemote({ c: c, changed: true, added: [], updated: [] });
+  }
+  function markCfgClean(){ meta("cfg").main = { rev: 0, h: hashRec(COLLS.cfg.list()[0]) }; }
+  return {
+    start: start, stop: stop, push: push, resolve: resolve, markCfgClean: markCfgClean, pendingCount: pendingCount,
+    revOf: function(c, id){ return (meta(c)[id] || {}).rev || 0; },
+    status: function(){ return { pending: lastPending, lastOk: lastOk, lastErr: lastErr, busy: busy }; },
+    _hash: hashRec, _scan: scan
+  };
+}
+/*SYNC-ENGINE-END*/
+
+  var FBV = "10.12.2", cloudSync = null, cloudBe = null, devMap = {}, cloudT = null, cloudStartedAt = 0, hbT = null, baseTitle = document.title;
+  var PERMS = [["add","إضافة مبيعات"],["pay","تسجيل تسديدات"],["cust","صفحات الزبائن"],["edit","تعديل الفواتير"],["del","حذف العمليات"],["exp","إصدار فواتير PDF"],["types","تعديل الأنواع"]];
+  var DEF_PERMS = { add: true, pay: true, cust: true, edit: false, del: false, exp: false, types: false };
+  var FB_RULES = "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /spaces/{space}/{coll}/{id} {\n      allow read, write: if coll in ['sales','payments','customers','cfg','devices'];\n    }\n    match /spaces/{space}/priv/{m}/{coll}/{id} {\n      allow read, write: if coll in ['purchases','expenses'];\n    }\n  }\n}\n";
+  function cloudOn(){ return !!(state.cloud && state.cloud.on); }
+  function isMgr(){ return !cloudOn() || !!state.cloud.mgr; }
+  function can(p){ if (isMgr()) return true; var pm = state.cloud.perms || DEF_PERMS; return !!pm[p]; }
+  function rnd(n){ var a = "abcdefghijklmnopqrstuvwxyz0123456789", o = "", b = crypto.getRandomValues(new Uint8Array(n)); for (var i = 0; i < n; i++) o += a[b[i] % 36]; return o; }
+  function loadScript(u){ return new Promise(function(res, rej){ var sc = document.createElement("script"); sc.src = u; sc.onload = res; sc.onerror = function(){ rej(new Error("تعذّر تحميل مكتبة Firebase (افتح البرنامج مرة وحدة بالإنترنت)")); }; document.head.appendChild(sc); }); }
+  function loadFirebase(){
+    if (window.firebase && firebase.firestore) return Promise.resolve();
+    var b = "https://www.gstatic.com/firebasejs/" + FBV + "/";
+    return loadScript(b + "firebase-app-compat.js").then(function(){ return loadScript(b + "firebase-firestore-compat.js"); });
+  }
+  function tmo(p, ms){ return Promise.race([p, new Promise(function(_, rej){ setTimeout(function(){ rej(new Error("انتهت مهلة الاتصال")); }, ms); })]); }
+  function fbBackend(cfg){
+    try { firebase.app(); } catch (e) { firebase.initializeApp(cfg); }
+    var db = firebase.firestore();
+    try { db.enablePersistence({ synchronizeTabs: true }).catch(function(){}); } catch (e) {}
+    return {
+      listen: function(path, cb, errcb){
+        return db.collection(path).onSnapshot(function(qs){
+          var ch = []; qs.docChanges().forEach(function(c){ if (c.type !== "removed") ch.push({ id: c.doc.id, data: c.doc.data() }); });
+          if (ch.length) cb(ch);
+        }, errcb);
+      },
+      batchSet: function(path, items){ return tmo(db.runTransaction(function(t){ items.forEach(function(it){ t.set(db.collection(path).doc(it.id), it.data); }); return Promise.resolve(); }), 60000); },
+      runTx: function(path, id, decide){
+        var ref = db.collection(path).doc(id);
+        return tmo(db.runTransaction(function(t){ return t.get(ref).then(function(sn){ var cur = sn.exists ? sn.data() : null, d = decide(cur); if (d.write) t.set(ref, d.write); return { d: d, cur: cur }; }); }), 25000);
+      },
+      get: function(path, id){ return tmo(db.collection(path).doc(id).get().then(function(sn){ return sn.exists ? sn.data() : null; }), 20000); },
+      setMerge: function(path, id, data){ return tmo(db.collection(path).doc(id).set(data, { merge: true }), 20000); }
+    };
+  }
+  function devId(){ return String(getDeviceId()).replace(/[^A-Za-z0-9_-]/g, "_"); }
+  function devPath(){ return "spaces/" + state.cloud.space + "/devices"; }
+  function cloudMsg(t){ var e = $("cloudMsg"); if (e) e.textContent = t || ""; }
+
+  function cloudKick(ms){
+    if (!cloudSync) return;
+    clearTimeout(cloudT);
+    cloudT = setTimeout(function(){ if (navigator.onLine) cloudSync.push(); else cloudStatus(); }, ms == null ? 1200 : ms);
+  }
+  async function cloudStart(joining, validate){
+    if (!cloudOn()) return;
+    cloudStop();
+    await loadFirebase();
+    cloudBe = fbBackend(state.cloud.cfg);
+    if (validate) await registerDevice();
+    cloudSync = createSync({ state: state, persist: persist, backend: cloudBe, deviceName: function(){ return state.cloud.devName || "جهاز"; }, onRemote: onRemote, onConflict: onConflict, onStatus: cloudStatus });
+    if (joining) cloudSync.markCfgClean();
+    cloudStartedAt = Date.now();
+    cloudSync.start();
+    if (!validate) registerDevice().catch(function(){});
+    cloudBe.listen(devPath(), function(changes){
+      changes.forEach(function(ch){
+        var d = ch.data; if (!d || !d.id) return; devMap[d.id] = d;
+        if (d.id === state.cloud.devId && !state.cloud.mgr) {
+          if (d.off) { cloudDisconnect(true); return; }
+          state.cloud.perms = d.perms || DEF_PERMS; persist(); applyRole();
+        }
+      });
+      renderDevices();
+    }, function(){});
+    clearInterval(hbT);
+    hbT = setInterval(function(){ if (navigator.onLine && cloudBe) { cloudBe.setMerge(devPath(), state.cloud.devId, { seen: new Date().toISOString() }).catch(function(){}); cloudKick(0); } }, 90000);
+    cloudKick(0); cloudStatus();
+  }
+  function cloudStop(){ if (cloudSync) cloudSync.stop(); cloudSync = null; cloudBe = null; clearInterval(hbT); clearTimeout(cloudT); }
+  async function registerDevice(){
+    var id = state.cloud.devId, cur = await cloudBe.get(devPath(), id);
+    var data = { id: id, name: state.cloud.devName, role: state.cloud.mgr ? "manager" : "worker", seen: new Date().toISOString() };
+    if (!cur && !state.cloud.mgr) data.perms = DEF_PERMS;
+    if (cur && cur.off) data.off = false;
+    await cloudBe.setMerge(devPath(), id, data);
+  }
+  function cloudBoot(){
+    applyRole(); renderCloudUi();
+    if (cloudOn()) cloudStart(false, false).catch(function(e){ cloudStatus(String(e && e.message || e)); });
+  }
+  function onRemote(info){
+    if (info.c === "cfg") renderTypes();
+    render(); if ($("buyMain") && !$("buyMain").hidden) renderBuy();
+    if (Date.now() - cloudStartedAt > 5000 && info.added && info.added.length) {
+      var a = info.added[0];
+      if (a.c === "sales") say("📥 " + (a.by || "جهاز") + ": بيع «" + a.rec.customer + "» — " + fmt(a.rec.amount) + " $" + (info.added.length > 1 ? " (+" + (info.added.length - 1) + " أخرى)" : ""));
+      else if (a.c === "payments") say("📥 " + (a.by || "جهاز") + ": تسديد «" + a.rec.customer + "» — " + fmt(a.rec.amount) + " $");
+    }
+    cloudStatus();
+  }
+  function onConflict(cf){
+    say("⚠️ تعارض تعديل: عُدِّلت نفس العملية من جهازين. راجعها من الشريط الأحمر.");
+    try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+    cloudStatus();
+  }
+  function cloudStatus(extra){
+    var cf = state.conflicts || [], el = $("cloudLine"), bn = $("cfBanner"), txt = "";
+    if (cloudOn()) {
+      var st = cloudSync ? cloudSync.status() : { pending: 0, lastErr: "" }, on = navigator.onLine;
+      txt = (on ? "☁️ " : "📴 ") + (state.cloud.mgr ? "مدير" : "عامل") + " (" + (state.cloud.devName || "") + ") — " +
+        (st.pending ? st.pending + " تغيير بانتظار الإرسال" : (on ? "متزامن" : "بدون إنترنت: يُحفظ هنا ويُرسل تلقائياً عند عودته")) +
+        ((extra || st.lastErr) ? " — ⚠️ " + (extra || st.lastErr) : "");
+    }
+    if (el) el.textContent = txt;
+    var cs = $("cloudStat"); if (cs) cs.textContent = txt;
+    if (bn) { bn.hidden = !cf.length; bn.textContent = "⚠️ " + cf.length + " تعارض في التعديل بين الأجهزة — اضغط للمراجعة"; }
+    document.title = (cf.length ? "⚠️ " : "") + baseTitle;
+  }
+  window.addEventListener("online", function(){ cloudKick(0); cloudStatus(); });
+  window.addEventListener("offline", function(){ cloudStatus(); });
+
+  /* ---- الأدوار والصلاحيات ---- */
+  function applyRole(){
+    var mgr = isMgr(), b = document.body;
+    b.setAttribute("data-noedit", can("edit") ? "" : "1"); b.setAttribute("data-nodel", can("del") ? "" : "1"); b.setAttribute("data-noexp", can("exp") ? "" : "1");
+    $("tb-buy").hidden = !mgr; $("tb-inv").hidden = !mgr; $("tb-debts").hidden = !can("cust");
+    Array.prototype.forEach.call(document.querySelectorAll(".mgr-only"), function(e){ e.hidden = !mgr; });
+    $("pricingCard").hidden = !can("add");
+    $("toggleTypes").hidden = !can("types"); if (!can("types")) $("typesPanel").hidden = true;
+    var cur = "sales"; try { cur = localStorage.getItem("qushoor-tab") || "sales"; } catch (e) {}
+    if ($("tb-" + cur) && $("tb-" + cur).hidden) showTab("sales");
+    cloudStatus();
+  }
+
+  /* ---- رموز الربط ---- */
+  function parseFbCfg(t){
+    var o = {}, re = /([A-Za-z_]+)\s*:\s*["']([^"']+)["']/g, m;
+    while ((m = re.exec(t))) o[m[1]] = m[2];
+    if (!o.apiKey || !o.projectId) return null;
+    var out = {}; ["apiKey","authDomain","projectId","storageBucket","messagingSenderId","appId"].forEach(function(k){ if (o[k]) out[k] = o[k]; });
+    return out;
+  }
+  function codeEnc(o){ var b = btoa(unescape(encodeURIComponent(JSON.stringify(o)))); return "QSH1." + b.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+  function codeDec(c){
+    c = String(c || "").replace(/\s+/g, ""); if (c.indexOf("QSH1.") !== 0) return null;
+    var b = c.slice(5).replace(/-/g, "+").replace(/_/g, "/"); while (b.length % 4) b += "=";
+    try { return JSON.parse(decodeURIComponent(escape(atob(b)))); } catch (e) { return null; }
+  }
+  function rollback(bk, why){
+    cloudStop(); state.cloud = bk.cloud; state.cm = bk.cm; state.conflicts = []; 
+    if (bk.data) { state.rows = bk.data.rows; state.payments = bk.data.payments; state.customers = bk.data.customers; state.purchases = bk.data.purchases; state.expenses = bk.data.expenses; state.types = bk.data.types; }
+    persist(); applyRole(); renderCloudUi(); render(); renderTypes();
+    cloudMsg("تعذّر الاتصال: " + why + " — تأكد من الإنترنت ومن لصق قواعد Firestore (Rules) ثم Publish.");
+  }
+  function cloudCreate(){
+    if (!licensed) return;
+    var cfg = parseFbCfg($("fbCfg").value);
+    if (!cfg) { cloudMsg("لم أجد apiKey و projectId. الصق كود firebaseConfig كاملاً."); return; }
+    var name = $("mgrDev").value.trim() || "جوال المدير";
+    askChoice("إنشاء مساحة المزامنة", "سيُرفع محتوى هذا الجهاز (المبيعات والزبائن والوارد والمصروفات) إلى Firebase، وسيكون هذا الجهاز «المدير». تأكد أن الإنترنت شغّال.", [
+      { t: "إنشاء ورفع", cls: "primary", fn: function(){ doCreate(cfg, name); } }, { t: "إلغاء" }]);
+  }
+  async function doCreate(cfg, name){
+    var bk = { cloud: state.cloud, cm: state.cm };
+    state.cloud = { on: true, cfg: cfg, space: rnd(24), mgr: rnd(24), devId: devId(), devName: name, perms: {} }; state.cm = {}; state.conflicts = []; persist();
+    cloudMsg("جارٍ الاتصال بـ Firebase...");
+    try { await cloudStart(false, true); }
+    catch (e) { rollback(bk, String(e && e.message || e)); return; }
+    save(); applyRole(); renderCloudUi(); render();
+    cloudMsg("✅ تم الربط وجارٍ رفع البيانات. اضغط «رمز ربط لجهاز عامل» لربط جوال العامل.");
+  }
+  function cloudJoin(){
+    if (!licensed) return;
+    var o = codeDec($("joinCode").value);
+    if (!o || !o.c || !o.s) { cloudMsg("رمز الربط غير صحيح. انسخه كاملاً من جهاز المدير."); return; }
+    var name = $("joinDev").value.trim(); if (!name) { cloudMsg("اكتب اسماً لهذا الجهاز."); $("joinDev").focus(); return; }
+    var has = state.rows.length + state.payments.length + state.customers.length;
+    askChoice("ربط هذا الجهاز", (has ? "⚠️ سيتم استبدال بيانات هذا الجهاز الحالية (" + state.rows.length + " عملية بيع) ببيانات المدير من السحابة. " : "") + "سيعمل هذا الجهاز كـ" + (o.m ? "«مدير إضافي»" : "«عامل»") + ".", [
+      { t: "ربط الآن", cls: "primary", fn: function(){ doJoin(o, name); } }, { t: "إلغاء" }]);
+  }
+  async function doJoin(o, name){
+    var bk = { cloud: state.cloud, cm: state.cm, data: { rows: state.rows, payments: state.payments, customers: state.customers, purchases: state.purchases, expenses: state.expenses, types: state.types } };
+    state.cloud = { on: true, cfg: o.c, space: o.s, mgr: o.m || "", devId: devId(), devName: name, perms: o.m ? {} : DEF_PERMS };
+    state.rows = []; state.payments = []; state.customers = []; state.purchases = []; state.expenses = []; state.cm = {}; state.conflicts = []; persist();
+    cloudMsg("جارٍ الاتصال وتحميل البيانات...");
+    try { await cloudStart(true, true); }
+    catch (e) { rollback(bk, String(e && e.message || e)); return; }
+    persist(); applyRole(); renderCloudUi(); render(); renderTypes();
+    cloudMsg("✅ تم الربط. ستظهر البيانات خلال لحظات.");
+  }
+  function cloudDisconnect(forced){
+    cloudStop(); state.cloud = { on: false }; state.cm = {}; state.conflicts = []; persist(); applyRole(); renderCloudUi();
+    say(forced ? "قام المدير بفصل هذا الجهاز عن المزامنة. بقيت البيانات المحلية على الجهاز." : "تم فصل الجهاز عن المزامنة.");
+  }
+  function makeInvite(kind){
+    var o = { c: state.cloud.cfg, s: state.cloud.space, r: kind }; if (kind === "m") o.m = state.cloud.mgr;
+    $("invCode").value = codeEnc(o); $("invCodeBox").hidden = false;
+    $("invNote").textContent = kind === "m" ? "⚠️ هذا الرمز يعطي صلاحية المدير الكاملة (الأرباح وأسعار الجملة). أرسله لشخص موثوق فقط." : "أرسل الرمز للعامل، يفتح البرنامج ← الإعدادات ← «③ جهاز عامل» ويلصقه. الصلاحيات تضبطها أنت من قائمة الأجهزة.";
+    $("invCode").dataset.kind = kind;
+  }
+
+  /* ---- واجهة الإعدادات ---- */
+  function ago(iso){ if (!iso) return ""; var m = Math.round((Date.now() - new Date(iso).getTime()) / 60000); return m < 4 ? "🟢 متصل الآن" : m < 60 ? "آخر ظهور قبل " + m + " د" : m < 1440 ? "آخر ظهور قبل " + Math.round(m / 60) + " س" : "آخر ظهور " + String(iso).slice(0, 10); }
+  function renderDevices(){
+    var box = $("devList"); if (!box || !cloudOn() || !state.cloud.mgr) return;
+    box.innerHTML = "";
+    var ids = Object.keys(devMap).sort(function(a, b){ return (devMap[b].seen || "") > (devMap[a].seen || "") ? 1 : -1; });
+    if (!ids.length) { box.innerHTML = '<p class="tip">لا توجد أجهزة مسجّلة بعد.</p>'; return; }
+    ids.forEach(function(id){
+      var d = devMap[id], me = id === state.cloud.devId, card = document.createElement("div"); card.className = "dev";
+      var h = document.createElement("div"); h.className = "line"; h.style.border = "0";
+      h.textContent = (d.role === "manager" ? "👑 " : "👷 ") + (d.name || id) + (me ? " (هذا الجهاز)" : "") + (d.off ? " — مفصول" : "");
+      var sm = document.createElement("span"); sm.className = "tip"; sm.textContent = ago(d.seen); h.appendChild(sm); card.appendChild(h);
+      if (d.role !== "manager" && !d.off) {
+        var pm = d.perms || DEF_PERMS;
+        PERMS.forEach(function(p){
+          var l = document.createElement("label"); l.className = "chk"; var c = document.createElement("input"); c.type = "checkbox"; c.checked = !!pm[p[0]]; c.setAttribute("data-p", p[0]);
+          c.addEventListener("change", function(){
+            var np = {}; Array.prototype.forEach.call(card.querySelectorAll("input[data-p]"), function(x){ np[x.getAttribute("data-p")] = x.checked; });
+            cloudBe.setMerge(devPath(), id, { perms: np }).then(function(){ cloudMsg("تم حفظ صلاحيات «" + (d.name || id) + "»."); }).catch(function(){ cloudMsg("تعذّر حفظ الصلاحيات (تحقق من الإنترنت)."); });
+          });
+          l.appendChild(c); l.appendChild(document.createTextNode(" " + p[1])); card.appendChild(l);
+        });
+        var off = document.createElement("button"); off.type = "button"; off.className = "danger small"; off.textContent = "فصل هذا الجهاز"; off.style.marginTop = "6px";
+        off.addEventListener("click", function(){ askChoice("فصل «" + (d.name || id) + "»", "سيتوقف عن المزامنة فوراً عند اتصاله.", [{ t: "فصل", cls: "danger", fn: function(){ cloudBe.setMerge(devPath(), id, { off: true }).catch(function(){}); } }, { t: "إلغاء" }]); });
+        card.appendChild(off);
+      }
+      box.appendChild(card);
+    });
+  }
+  function renderCloudUi(){
+    if (!$("cloudCard")) return;
+    $("cloudOff").hidden = cloudOn(); $("cloudOn").hidden = !cloudOn();
+    $("fbRules").value = FB_RULES;
+    cloudStatus(); renderDevices();
+  }
+  /* ---- التعارضات ---- */
+  var FLD = { date: "التاريخ", time: "الوقت", customer: "الزبون", type: "النوع", payType: "طريقة البيع", method: "وسيلة الدفع", price: "سعر الطن", tons: "الكمية (طن)", disc: "الخصم", amount: "المبلغ", paid: "المدفوع", remaining: "الباقي", name: "الاسم", phone: "الهاتف", notes: "ملاحظات", supplier: "المورّد", priceTon: "سعر الطن", total: "الإجمالي", cat: "البند", desc: "الوصف" };
+  var CN = { sales: "فاتورة بيع", payments: "تسديد", customers: "زبون", purchases: "وارد", expenses: "مصروف" };
+  var KEYARR = { sales: "rows", payments: "payments", customers: "customers", purchases: "purchases", expenses: "expenses" };
+  function descRec(c, x){
+    if (!x) return "";
+    if (c === "sales") return x.customer + " · " + x.type + " · " + fmt(x.amount) + " $ · " + x.date;
+    if (c === "payments") return x.customer + " · " + fmt(x.amount) + " $ · " + x.date;
+    if (c === "customers") return x.name;
+    if (c === "purchases") return x.type + " · " + fmt(x.total) + " $ · " + x.date;
+    return (x.cat || "") + " · " + fmt(x.amount) + " $ · " + x.date;
+  }
+  function diffLines(a, b){
+    var out = [];
+    Object.keys(FLD).forEach(function(k){ if ((a && a[k] !== undefined) || (b && b[k] !== undefined)) { var va = a ? a[k] : undefined, vb = b ? b[k] : undefined; if (String(va) !== String(vb)) out.push(FLD[k] + ": " + (va === undefined ? "—" : va) + "  ⟵ مقابل ⟶  " + (vb === undefined ? "—" : vb)); } });
+    return out;
+  }
+  function renderConflicts(){
+    var box = $("cfList"); box.innerHTML = "";
+    var list = state.conflicts || [];
+    if (!list.length) { box.innerHTML = '<p class="tip">لا توجد تعارضات. ✅</p>'; }
+    list.slice().forEach(function(cf){
+      var arr = state[KEYARR[cf.c]] || [], mine = null; arr.forEach(function(x){ if (x.id === cf.id) mine = x; });
+      var theirs = null; if (!cf.remote.del) { try { theirs = JSON.parse(cf.remote.j); } catch (e) {} }
+      var who = cf.remote.by || "جهاز آخر", when = cf.remote.at ? String(cf.remote.at).replace("T", " ").slice(0, 16) : "";
+      var d = document.createElement("div"); d.className = "cfi";
+      var t = document.createElement("div"); t.style.fontWeight = "800"; t.textContent = (CN[cf.c] || cf.c) + ": " + descRec(cf.c, mine || theirs); d.appendChild(t);
+      var w = document.createElement("div"); w.className = "d";
+      w.textContent = cf.kind === "localdel" ? "حذفتَ هذه العملية هنا، لكن «" + who + "» عدّلها (" + when + ")." : cf.remote.del ? "«" + who + "» حذف هذه العملية (" + when + ") وأنت عدّلتها." : "«" + who + "» عدّلها أيضاً (" + when + ") وأنت عدّلتها قبل وصول تعديله.";
+      d.appendChild(w);
+      if (cf.kind === "edit" && !cf.remote.del) diffLines(mine, theirs).forEach(function(ln){ var e = document.createElement("div"); e.className = "df"; e.textContent = "• " + ln; d.appendChild(e); });
+      var ac = document.createElement("div"); ac.className = "actions";
+      var b1 = document.createElement("button"); b1.type = "button"; b1.className = "small"; b1.textContent = cf.kind === "localdel" ? "تأكيد حذفي" : "إبقاء نسختي (هذا الجهاز)";
+      var b2 = document.createElement("button"); b2.type = "button"; b2.className = "small"; b2.textContent = cf.remote.del ? "اعتماد الحذف" : "اعتماد نسخة «" + who + "»";
+      function done(how){ cloudSync.resolve(cf.c, cf.id, how); render(); cloudKick(0); renderConflicts(); cloudStatus(); }
+      b1.addEventListener("click", function(){ done("mine"); }); b2.addEventListener("click", function(){ done("theirs"); });
+      ac.appendChild(b1); ac.appendChild(b2); d.appendChild(ac); box.appendChild(d);
+    });
+  }
+  $("cfBanner").addEventListener("click", function(){ renderConflicts(); $("cfDlg").hidden = false; });
+  $("cfClose").addEventListener("click", function(){ $("cfDlg").hidden = true; });
+  $("fbRulesCopy").addEventListener("click", function(){ var t = $("fbRules"); t.select(); try { navigator.clipboard.writeText(FB_RULES); } catch (e) { document.execCommand("copy"); } cloudMsg("تم نسخ القواعد."); });
+  $("cloudCreate").addEventListener("click", cloudCreate);
+  $("cloudJoin").addEventListener("click", cloudJoin);
+  $("cloudNow").addEventListener("click", function(){ if (cloudSync) { cloudMsg("جارٍ المزامنة..."); cloudSync.push().then(function(ok){ cloudMsg(ok ? "تمت المزامنة ✅" : "تعذّرت المزامنة، سيعاد المحاولة تلقائياً."); cloudStatus(); }); } });
+  $("cloudLeave").addEventListener("click", function(){ askChoice("فصل هذا الجهاز", "سيتوقف عن المزامنة وتبقى البيانات المحلية. (تعديلاتك غير المرسلة قد لا تصل.)", [{ t: "فصل", cls: "danger", fn: function(){ cloudDisconnect(false); } }, { t: "إلغاء" }]); });
+  $("invW").addEventListener("click", function(){ makeInvite("w"); });
+  $("invM").addEventListener("click", function(){ makeInvite("m"); });
+  $("invCopy").addEventListener("click", function(){ var t = $("invCode"); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand("copy"); } cloudMsg("تم نسخ الرمز."); });
+  $("invWa").addEventListener("click", function(){ var kind = $("invCode").dataset.kind === "m" ? "مدير إضافي" : "عامل"; window.open("https://wa.me/?text=" + encodeURIComponent("رمز ربط جهاز (" + kind + ") ببرنامج قشور الضاهر:\n" + $("invCode").value), "_blank", "noopener"); });
 
   /* ---------- Tabs ---------- */
   var TABS = ["sales", "buy", "debts", "inv", "settings"];
   function showTab(t){
-    if (TABS.indexOf(t) < 0) t = "sales";
+    if (TABS.indexOf(t) < 0 || ($("tb-" + t) && $("tb-" + t).hidden)) t = "sales";
     TABS.forEach(function(k){ $("tab-" + k).hidden = k !== t; $("tb-" + k).setAttribute("aria-selected", String(k === t)); });
     try { localStorage.setItem("qushoor-tab", t); } catch (e) {}
     window.scrollTo(0, 0);
     if (t === "buy") renderBuy();
     if (t === "debts") renderCust();
+    if (t === "settings") renderCloudUi();
   }
   TABS.forEach(function(k){ $("tb-" + k).addEventListener("click", function(){ showTab(k); }); });
   var tabSaved = "sales"; try { tabSaved = localStorage.getItem("qushoor-tab") || "sales"; } catch (e) {}
