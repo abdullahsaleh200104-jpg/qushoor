@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="./icons/icon-180.png">
 <link rel="icon" type="image/png" href="./icons/icon-192.png">
+<script src="./keys.js"></script>
 <script>
 /* تحميل المكتبات بدون تعطيل الصفحة: نسخة محلية (lib/) أولاً ثم الإنترنت، والبرنامج يعمل حتى لو غابتا */
 (function(){
@@ -171,6 +172,7 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
 .dev{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px}
 .dev label.chk{padding:2px 0}
 body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt="1"] #payDebt,body[data-nodisc="1"] #discBox,body[data-nohist="1"] #cdHist{display:none!important}
+body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~="excel"] #linkFile,body[data-nofx~="excel"] [aria-label="المزامنة"],body[data-nofx~="pdf"] #invBlock,body[data-nofx~="pdf"] #cdInv,body[data-nofx~="sham"] #mSham,body[data-nofx~="sham"] [aria-label="شام كاش"],body[data-nofx~="backup"] #bkCloud{display:none!important}
 [hidden]{display:none!important}
 @media (max-width:420px){.grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:no-preference){button{transition:opacity .15s}}
@@ -501,6 +503,27 @@ body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt
   </div>
 
   <div class="tabpanel" id="tab-settings" hidden>
+  <section class="card mgr-only" id="licCard" aria-label="الترخيص">
+    <div class="head"><h2>🔑 الترخيص</h2></div>
+    <div id="licInfo" class="tip" style="line-height:1.9"></div>
+    <label style="margin-top:8px">تحديث الترخيص (كود جديد من المطوّر لإضافة/تعديل ميزات)<textarea id="licNew" rows="3" placeholder="L2...."></textarea></label>
+    <button id="licUpd" type="button" class="small" style="margin-top:6px">تطبيق الكود</button>
+    <p class="msg" id="licMsg" role="status"></p>
+  </section>
+  <section class="card mgr-only" id="bkCard" aria-label="النسخ الاحتياطي">
+    <div class="head"><h2>💾 النسخ الاحتياطي والاسترجاع</h2></div>
+    <p class="tip">إذا حُذف البرنامج أو تغيّر الجهاز، تسترجع بياناتك (المبيعات، الزبائن، الوارد، الإعدادات، الحسابات) من نسختك الاحتياطية بعد التفعيل.</p>
+    <div class="actions"><button id="bkFileOut" type="button">⬇️ تنزيل نسخة احتياطية (ملف مشفّر)</button><label class="btnlink" style="cursor:pointer;margin:0">⬆️ استرجاع من ملف<input id="bkFileIn" type="file" hidden></label></div>
+    <div id="bkCloud">
+      <h3>☁️ نسخ احتياطي تلقائي للسحابة</h3>
+      <p class="tip">تُرفع بياناتك <b>مشفّرة بالكامل</b> (AES-256) برمز الاسترجاع الذي تختاره أنت. لا يعرفه المطوّر ولا Firebase، وإذا نسيته لا يمكن استرجاع النسخة.</p>
+      <label>رمز الاسترجاع (6 أحرف على الأقل)<input id="bkPass" type="password" autocomplete="off"></label>
+      <label class="chk"><input id="bkOn" type="checkbox"> تفعيل النسخ التلقائي (بعد كل تغيير، حين يتوفر إنترنت)</label>
+      <p class="tip" id="bkInfo" style="margin-top:6px"></p>
+      <div class="actions"><button id="bkNow" type="button">☁️ نسخ الآن</button><button id="bkRestoreCloud" type="button">⬇️ استرجاع من السحابة</button></div>
+    </div>
+    <p class="msg" id="bkMsg" role="status"></p>
+  </section>
   <section class="card" id="cloudCard" aria-label="ربط الأجهزة">
     <div class="head"><h2>☁️ ربط الأجهزة (مدير وعمال)</h2></div>
     <p class="tip" id="cloudStat" style="margin-bottom:8px"></p>
@@ -622,6 +645,16 @@ body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt
   </nav>
 </div>
 
+<div class="dlg" id="bkDlg" hidden>
+  <div class="dlgbox" role="dialog" aria-modal="true" dir="rtl">
+    <h2 id="bkDlgT"></h2>
+    <p id="bkDlgM" style="margin:0;line-height:1.7"></p>
+    <label>رمز الاسترجاع<input id="bkDlgPass" type="password" autocomplete="off"></label>
+    <p class="err" id="bkDlgErr" style="color:var(--danger);font-weight:700;min-height:1.4em;margin:0"></p>
+    <div class="actions" style="margin:0"><button class="primary" id="bkDlgOk" type="button" style="margin:0">متابعة</button><button id="bkDlgNo" type="button">تخطي</button></div>
+  </div>
+</div>
+
 <div class="dlg" id="cfmDlg" hidden>
   <div class="dlgbox" role="dialog" aria-modal="true" dir="rtl">
     <h2 id="cfmT"></h2>
@@ -693,13 +726,13 @@ body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt
   var $ = function(id){ return document.getElementById(id); };
   var state = {
     types: ["قشور فستق", "قشور لوز", "قشور جوز", "قشور بندق"],
-    prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], delMode: "admin", sync: { url: "", key: "", auto: false }, autoXl: { on: false, last: 0 }, purchases: [], expenses: [], shamQR: "", shamInfo: "", customers: [], warnDup: true, resetWa: "", cloud: { on: false }, cm: {}, conflicts: []
+    prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], delMode: "admin", sync: { url: "", key: "", auto: false }, autoXl: { on: false, last: 0 }, purchases: [], expenses: [], shamQR: "", shamInfo: "", customers: [], warnDup: true, resetWa: "", bk: { on: false, pass: "", h: 0, ts: "" }, cloud: { on: false }, cm: {}, conflicts: []
   };
   try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.types) state = Object.assign(state, s); } catch (e) {}
-  state.cm = state.cm || {}; state.conflicts = state.conflicts || []; state.cloud = state.cloud || { on: false }; state.customers = state.customers || []; state.purchases = state.purchases || []; state.expenses = state.expenses || []; state.payments = state.payments || []; state.seasons = state.seasons || [];
+  state.bk = state.bk || { on: false, pass: "", h: 0, ts: "" }; state.cm = state.cm || {}; state.conflicts = state.conflicts || []; state.cloud = state.cloud || { on: false }; state.customers = state.customers || []; state.purchases = state.purchases || []; state.expenses = state.expenses || []; state.payments = state.payments || []; state.seasons = state.seasons || [];
   var syncT = null;
   function persist(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
-  function save(){ persist(); if (state.cloud && state.cloud.on) cloudKick();
+  function save(){ persist(); if (state.cloud && state.cloud.on) cloudKick(); try { bkKick(); } catch (e) {}
     if (state.sync && state.sync.auto && state.sync.url) { clearTimeout(syncT); syncT = setTimeout(function(){ syncNow(); }, 1500); } }
 
   function num(v){
@@ -778,11 +811,33 @@ body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt
       return ok ? name : null;
     } catch (e) { return null; }
   }
-  function unlock(name){
-    licensed = true; licName = name;
+  var lic = { v: 1, f: null, cid: "", s: 0, name: "" };
+  function feat(k){ return !lic.f || lic.f.indexOf(k) >= 0; }
+  async function vfy(pub, msg, sigB64){
+    var key = await crypto.subtle.importKey("jwk", pub, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
+    return crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, b64uToBytes(sigB64), new TextEncoder().encode(msg));
+  }
+  async function verifyLicense(code, id){
+    code = String(code || "").replace(/\s+/g, "");
+    try {
+      if (code.indexOf("L2.") === 0) {
+        var p = code.slice(3).split(".");
+        if (p.length !== 2 || !window.QS_PUB2 || !id) return null;
+        if (!(await vfy(window.QS_PUB2, "qushoor2|" + p[0], p[1]))) return null;
+        var o = JSON.parse(new TextDecoder().decode(b64uToBytes(p[0])));
+        if (o.d !== id) return null;
+        return { name: o.n, v: 2, cid: o.c || "", f: Array.isArray(o.f) ? o.f : null, s: o.s || 0 };
+      }
+      var nm = await verifyCode(code, id);
+      return nm ? { name: nm, v: 1, cid: "", f: null, s: 0 } : null;
+    } catch (e) { return null; }
+  }
+  function unlock(L){
+    lic = L; licensed = true; licName = L.name;
     $("gate").hidden = true; $("appWrap").hidden = false;
-    $("licLine").textContent = "مرخّص لـ: " + name;
+    $("licLine").textContent = "مرخّص لـ: " + L.name;
     try { cloudBoot(); } catch (e) {}
+    try { licInfoRender(); loadPlugin(); bkAfterUnlock(); } catch (e) {}
   }
   async function checkLicense(){
     var id = getDeviceId();
@@ -793,17 +848,21 @@ body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt
       return;
     }
     var saved = ""; try { saved = localStorage.getItem(LKEY) || ""; } catch (e) {}
-    var name = saved ? await verifyCode(saved, id) : null;
-    if (name) { unlock(name); return; }
+    var L = saved ? await verifyLicense(saved, id) : null;
+    if (L) { unlock(L); return; }
     $("gate").hidden = false;
   }
   $("activate").addEventListener("click", async function(){
     var id = getDeviceId(), code = $("codeIn").value;
     if (!code.trim()) { $("gateErr").textContent = "الصق رمز التفعيل أولاً."; return; }
-    var name = await verifyCode(code, id);
-    if (!name) { $("gateErr").textContent = "الرمز غير صحيح أو أنه لجهاز آخر. تأكد من نسخه كاملاً، أو أرسل رقم جهازك للمطوّر."; return; }
+    var L = await verifyLicense(code, id);
+    if (!L) {
+      var c2 = code.replace(/\s+/g, "");
+      $("gateErr").textContent = (c2.indexOf("L2.") === 0 && !window.QS_PUB2) ? "ملف keys.js غير موجود أو لم يُرفع مع البرنامج (المطوّر يرفعه بجانب index.html)." : "الرمز غير صحيح أو أنه لجهاز آخر. تأكد من نسخه كاملاً، أو أرسل رقم جهازك للمطوّر.";
+      return;
+    }
     try { localStorage.setItem(LKEY, code.replace(/\s+/g, "")); } catch (e) {}
-    $("gateErr").textContent = ""; unlock(name);
+    $("gateErr").textContent = ""; unlock(L);
   });
   $("copyId").addEventListener("click", function(){
     var id = $("devId").textContent;
@@ -931,7 +990,7 @@ body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt
     });
     state.prices[state.selected] = c.price;
     save(); render();
-    ["qty","amt","paidAmt","customer","disc"].forEach(function(id){ $(id).value = ""; }); setMethod("كاش"); custWarn(); calc(); say("تمت الإضافة.");
+    ["qty","amt","paidAmt","customer","disc"].forEach(function(id){ $(id).value = ""; }); setMethod("كاش"); custWarn(); calc(); say("تمت الإضافة."); runHooks("sale");
   });
 
   /* ---------- list & search ---------- */
@@ -981,6 +1040,7 @@ body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt
     showPayInfo();
     $("export").disabled = $("copy").disabled = $("clear").disabled = $("invBtn").disabled = !state.rows.length;
     renderCust();
+    runHooks("render");
   }
 
   $("clear").addEventListener("click", function(){
@@ -1602,11 +1662,9 @@ function home_(ss, d) {
   $("resetShare").addEventListener("click", function(){ var t = $("resetMsg").value; if (navigator.share) navigator.share({ text: t }).catch(function(){}); else { $("resetCopy").click(); } });
   $("resetAgain").addEventListener("click", function(){ var t = $("resetMsg").value || (state.resetCh && state.resetCh.t) || ""; if (!t) { invSay("اضغط «إرسال طلب الاستعادة» أولاً.", 1); return; } openWa(resetTarget(), t); invSay("أُعيد فتح واتساب للرقم " + resetTarget() + "."); });
   async function verifyReset(code, id, ch){
-    try {
-      var sig = b64uToBytes(String(code || "").replace(/\s+/g, ""));
-      var key = await crypto.subtle.importKey("jwk", PUB, { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
-      return await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, sig, new TextEncoder().encode("reset|" + id + "|" + ch));
-    } catch (e) { return false; }
+    var sig = String(code || "").replace(/\s+/g, ""), keys = [window.QS_PUB2, PUB];
+    for (var i = 0; i < keys.length; i++) { if (!keys[i]) continue; try { if (await vfy(keys[i], "reset|" + id + "|" + ch, sig)) return true; } catch (e) {} }
+    return false;
   }
   $("resetDo").addEventListener("click", async function(){
     var rc = state.resetCh, np = $("resetPass").value;
@@ -2423,8 +2481,10 @@ function createSync(env){
     if (!can("debt") && $("payDebt").getAttribute("aria-pressed") === "true") $("payCash").click();
     if (!can("disc")) { $("disc").value = ""; try { calc(); } catch (e) {} }
     $("debtsCard").hidden = !(can("pay") || can("exp"));
-    $("tb-buy").hidden = !mgr; $("tb-inv").hidden = !mgr; $("tb-debts").hidden = !can("cust");
+    $("tb-buy").hidden = !mgr || !feat("buy"); $("tb-inv").hidden = !mgr || !feat("inv"); $("tb-debts").hidden = !can("cust") || !feat("cust");
+    b.setAttribute("data-nofx", ["excel","pdf","sham","backup"].filter(function(k){ return !feat(k); }).join(" "));
     Array.prototype.forEach.call(document.querySelectorAll(".mgr-only"), function(e){ e.hidden = !mgr; });
+    $("cloudCard").hidden = !feat("cloud");
     $("pricingCard").hidden = !can("add");
     $("toggleTypes").hidden = !can("types"); if (!can("types")) $("typesPanel").hidden = true;
     var cur = "sales"; try { cur = localStorage.getItem("qushoor-tab") || "sales"; } catch (e) {}
@@ -2601,6 +2661,193 @@ function createSync(env){
   $("invM").addEventListener("click", function(){ $("invPermBox").hidden = true; makeInvite("m"); });
   $("invCopy").addEventListener("click", function(){ var t = $("invCode"); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand("copy"); } cloudMsg("تم نسخ الرمز."); });
   $("invWa").addEventListener("click", function(){ var kind = $("invCode").dataset.kind === "m" ? "مدير إضافي" : "عامل"; openWa("", "رمز ربط جهاز (" + kind + ") ببرنامج قشور الضاهر:\n" + $("invCode").value); });
+
+  /* ---------- ميزات الزبون + إضافات موقّعة + نسخ احتياطي مشفّر ---------- */
+  var QSH = { render: [], sale: [] };
+  function runHooks(n){ var a = QSH && QSH[n]; if (a) a.forEach(function(f){ try { f(); } catch (e) { console.error(e); } }); }
+  var FEATN = { cust: "صفحات الزبائن والديون", buy: "الوارد والأرباح", inv: "الجرد والمواسم", cloud: "ربط الأجهزة", excel: "تصدير إكسل", pdf: "فواتير PDF", sham: "شام كاش", backup: "نسخ احتياطي سحابي" };
+  var pluginState = "";
+  function licInfoRender(){
+    var el = $("licInfo"); if (!el) return;
+    var fl = lic.f ? lic.f.map(function(k){ return FEATN[k] || k; }).join("، ") : "كل الميزات";
+    el.innerHTML = "";
+    [["الاسم", lic.name], ["رقم الزبون", lic.cid || "—"], ["نوع الترخيص", lic.v === 2 ? "v2 (ميزات مخصصة)" : "v1 (قديم)"], ["الميزات", fl], ["إضافات خاصة بك", pluginState || "لا يوجد"], ["رقم هذا الجهاز", getDeviceId()]].forEach(function(r){
+      var d = document.createElement("div"); d.textContent = r[0] + ": " + r[1]; el.appendChild(d);
+    });
+  }
+  $("licUpd").addEventListener("click", async function(){
+    var m = $("licMsg"), code = $("licNew").value.replace(/\s+/g, "");
+    if (!code) { m.textContent = "الصق الكود أولاً."; return; }
+    var L = await verifyLicense(code, getDeviceId());
+    if (!L) { m.textContent = "❌ الكود غير صحيح أو أنه لجهاز آخر."; return; }
+    if (lic.cid && L.cid && L.cid !== lic.cid) { m.textContent = "❌ هذا الكود لزبون مختلف."; return; }
+    if (L.s < lic.s) { m.textContent = "❌ هذا الكود أقدم من ترخيصك الحالي."; return; }
+    try { localStorage.setItem(LKEY, code); } catch (e) {}
+    lic = L; licName = L.name; $("licNew").value = ""; applyRole(); licInfoRender(); m.textContent = "✅ تم تحديث الترخيص والميزات.";
+    loadPlugin();
+  });
+
+  /* واجهة الإضافات (Plugins) — لا تُنفَّذ إلا إن كانت موقّعة بمفتاح المطوّر */
+  var QSAPI = {
+    state: state, save: save, render: render, say: say, $: $, fmt: fmt, today: today, nowTime: nowTime, showTab: showTab, license: function(){ return lic; },
+    onRender: function(f){ QSH.render.push(f); }, onSale: function(f){ QSH.sale.push(f); },
+    addCard: function(tab, title, build){
+      var p = $("tab-" + tab); if (!p) return null;
+      var sec = document.createElement("section"); sec.className = "card";
+      var h = document.createElement("div"); h.className = "head"; var t = document.createElement("h2"); t.textContent = title; h.appendChild(t); sec.appendChild(h);
+      var box = document.createElement("div"); sec.appendChild(box); p.appendChild(sec);
+      try { build(box); } catch (e) { console.error(e); } return box;
+    },
+    addTab: function(id, label, icon, build){
+      if ($("tab-" + id)) return null;
+      var panel = document.createElement("div"); panel.className = "tabpanel"; panel.id = "tab-" + id; panel.hidden = true; $("tab-settings").parentNode.insertBefore(panel, $("tab-settings"));
+      var btn = document.createElement("button"); btn.type = "button"; btn.id = "tb-" + id; btn.setAttribute("role", "tab"); btn.setAttribute("aria-selected", "false");
+      var ic = document.createElement("span"); ic.className = "ic"; ic.textContent = icon; btn.appendChild(ic); btn.appendChild(document.createTextNode(label));
+      $("tb-settings").parentNode.insertBefore(btn, $("tb-settings")); TABS.splice(TABS.indexOf("settings"), 0, id); btn.addEventListener("click", function(){ showTab(id); });
+      try { build(panel); } catch (e) { console.error(e); } return panel;
+    }
+  };
+  async function loadPlugin(){
+    var cid = lic.cid; if (!cid || !window.QS_PUB2 || window.__qsPluginLoaded === cid) return;
+    var key = "qushoor-plugin-" + cid, code = null, sig = null;
+    try {
+      var r1 = await fetch("./customers/" + cid + ".js", { cache: "no-cache" }), r2 = await fetch("./customers/" + cid + ".sig", { cache: "no-cache" });
+      if (r1.ok && r2.ok) { code = await r1.text(); sig = (await r2.text()).trim(); }
+    } catch (e) {}
+    if (!code) { try { var c = JSON.parse(localStorage.getItem(key) || "null"); if (c) { code = c.code; sig = c.sig; } } catch (e) {} }
+    if (!code) { pluginState = ""; licInfoRender(); return; }
+    var ok = false; try { ok = await vfy(window.QS_PUB2, "qushoor-plugin|" + cid + "|" + code, sig); } catch (e) {}
+    if (!ok) { pluginState = "❌ توقيع غير صالح (لم تُنفَّذ)"; licInfoRender(); return; }
+    try { localStorage.setItem(key, JSON.stringify({ code: code, sig: sig })); } catch (e) {}
+    try { new Function("QS", code)(QSAPI); window.__qsPluginLoaded = cid; pluginState = "✅ مفعّلة"; } catch (e) { pluginState = "⚠️ خطأ في الإضافة: " + e.message; console.error(e); }
+    licInfoRender(); try { render(); } catch (e) {}
+  }
+
+  /* نسخ احتياطي مشفّر: ملف + سحابة المطوّر (اختيارية) */
+  function hstr(str){ var h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (var i = 0, ch; i < str.length; i++) { ch = str.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909); return 4294967296 * (2097151 & h2) + (h1 >>> 0); }
+  function snapState(){ var o = JSON.parse(JSON.stringify(state)); ["cloud", "cm", "conflicts", "resetCh", "bk"].forEach(function(k){ delete o[k]; }); return o; }
+  function b64(u){ var s2 = "", c = 0x8000; for (var i = 0; i < u.length; i += c) s2 += String.fromCharCode.apply(null, u.subarray(i, i + c)); return btoa(s2); }
+  function unb64(t){ var b = atob(t), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  async function pbkey(pass, salt){
+    var km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt: salt, iterations: 200000, hash: "SHA-256" }, km, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+  async function gz(u, dec){
+    var st = new Blob([u]).stream().pipeThrough(dec ? new DecompressionStream("gzip") : new CompressionStream("gzip"));
+    return new Uint8Array(await new Response(st).arrayBuffer());
+  }
+  async function bkEncrypt(obj, pass){
+    var raw = new TextEncoder().encode(JSON.stringify(obj)), z = 0;
+    if (window.CompressionStream) { try { raw = await gz(raw, false); z = 1; } catch (e) { raw = new TextEncoder().encode(JSON.stringify(obj)); } }
+    var salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12)), key = await pbkey(pass, salt);
+    var ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, raw));
+    return JSON.stringify({ v: 1, z: z, s: b64(salt), i: b64(iv), d: b64(ct) });
+  }
+  async function bkDecrypt(text, pass){
+    var o = JSON.parse(text); if (o.v !== 1) throw new Error("نسخة غير معروفة");
+    var key = await pbkey(pass, unb64(o.s)), raw;
+    try { raw = new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(o.i) }, key, unb64(o.d))); } catch (e) { throw new Error("bad-pass"); }
+    if (o.z) raw = await gz(raw, true);
+    return JSON.parse(new TextDecoder().decode(raw));
+  }
+  function applySnapshot(snap){
+    Object.keys(snap).forEach(function(k){ state[k] = snap[k]; });
+    state.cloud = { on: false }; state.cm = {}; state.conflicts = []; delete state.resetCh; persist();
+  }
+  function bkSay(t){ var e = $("bkMsg"); if (e) e.textContent = t || ""; }
+  function askPass(title, msg, okLabel, err){
+    return new Promise(function(res){
+      $("bkDlgT").textContent = title; $("bkDlgM").textContent = msg; $("bkDlgOk").textContent = okLabel || "متابعة"; $("bkDlgErr").textContent = err || ""; $("bkDlgPass").value = ""; $("bkDlg").hidden = false;
+      setTimeout(function(){ $("bkDlgPass").focus(); }, 50);
+      function done(v){ $("bkDlg").hidden = true; $("bkDlgOk").onclick = null; $("bkDlgNo").onclick = null; res(v); }
+      $("bkDlgOk").onclick = function(){ done($("bkDlgPass").value); }; $("bkDlgNo").onclick = function(){ done(null); };
+    });
+  }
+  async function bkRestoreText(text){
+    var err = "";
+    for (var tries = 0; tries < 5; tries++) {
+      var p = await askPass("🔐 رمز الاسترجاع", "اكتب رمز الاسترجاع الذي اخترته عند إنشاء النسخة.", "استرجاع", err);
+      if (p === null) return false;
+      try {
+        var snap = await bkDecrypt(text, p);
+        applySnapshot(snap); state.bk = state.bk || {}; bkSay("✅ تم الاسترجاع. جارٍ إعادة التشغيل..."); setTimeout(function(){ location.reload(); }, 700); return true;
+      } catch (e) { err = e.message === "bad-pass" ? "❌ رمز الاسترجاع غير صحيح." : "❌ " + e.message; }
+    }
+    bkSay("محاولات كثيرة خاطئة."); return false;
+  }
+  $("bkFileOut").addEventListener("click", async function(){
+    var p = await askPass("💾 نسخة احتياطية", "اختر رمز استرجاع لتشفير الملف. احفظه جيداً: بدونه لا يمكن فتح النسخة.", "تنزيل");
+    if (p === null) return; if (p.length < 6) { bkSay("الرمز 6 أحرف على الأقل."); return; }
+    try {
+      var text = await bkEncrypt(snapState(), p), blob = new Blob([text], { type: "text/plain" }), d = new Date(), nm = "qushoor-backup-" + d.getFullYear() + ("0" + (d.getMonth() + 1)).slice(-2) + ("0" + d.getDate()).slice(-2) + ".qsb";
+      plainDownload(blob, nm); bkSay("تم تنزيل الملف: " + nm + " — احتفظ به في مكان آمن.");
+    } catch (e) { bkSay("تعذّر إنشاء النسخة: " + e.message); }
+  });
+  $("bkFileIn").addEventListener("change", function(){
+    var f = this.files && this.files[0]; this.value = ""; if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function(){ askChoice("⚠️ استرجاع نسخة", "سيتم استبدال بيانات هذا الجهاز الحالية بمحتوى النسخة الاحتياطية.", [{ t: "متابعة", cls: "primary", fn: function(){ bkRestoreText(String(rd.result)); } }, { t: "إلغاء" }]); };
+    rd.readAsText(f);
+  });
+  function bkCfgOk(){ return !!(window.QS_BACKUP_FB && lic.cid && feat("backup")); }
+  function bkDb(){
+    var app; try { app = firebase.app("qsbk"); } catch (e) { app = firebase.initializeApp(window.QS_BACKUP_FB, "qsbk"); }
+    return app.firestore();
+  }
+  function bkInfo(){
+    var el = $("bkInfo"); if (!el) return;
+    $("bkPass").value = state.bk.pass || ""; $("bkOn").checked = !!state.bk.on;
+    el.textContent = !bkCfgOk() ? "النسخ السحابي غير مُعدّ لهذا الترخيص (استخدم نسخة الملف)." : (state.bk.ts ? "آخر نسخة سحابية: " + String(state.bk.ts).replace("T", " ").slice(0, 16) : "لم تُرفع نسخة سحابية بعد.");
+  }
+  var BKT = null, bkBusy = false, CH = 600000;
+  async function bkUpload(manual){
+    if (!bkCfgOk()) { if (manual) bkSay("النسخ السحابي غير مُعدّ."); return false; }
+    if (!state.bk.pass || state.bk.pass.length < 6) { if (manual) bkSay("اكتب رمز استرجاع (6 أحرف على الأقل) أولاً."); return false; }
+    if (bkBusy) return false; bkBusy = true;
+    try {
+      await loadFirebase(); var db = bkDb(), snap = snapState(), h = hstr(JSON.stringify(snap));
+      if (!manual && h === state.bk.h) return true;
+      var text = await bkEncrypt(snap, state.bk.pass), n = Math.ceil(text.length / CH), ref = db.collection("qsbackups").doc(lic.cid);
+      for (var i = 0; i < n; i++) await tmo(ref.collection("chunks").doc(String(i)).set({ d: text.slice(i * CH, (i + 1) * CH), n: i }), 40000);
+      await tmo(ref.set({ ts: new Date().toISOString(), n: n, size: text.length, ver: lic.s || 0 }), 30000);
+      state.bk.h = h; state.bk.ts = new Date().toISOString(); persist(); bkInfo(); if (manual) bkSay("✅ تم رفع نسخة مشفّرة (" + Math.round(text.length / 1024) + " ك.ب).");
+      return true;
+    } catch (e) { if (manual) bkSay("تعذّر النسخ: " + (e && e.message || e)); return false; }
+    finally { bkBusy = false; }
+  }
+  function bkKick(){ if (!state.bk || !state.bk.on || !licensed || !bkCfgOk()) return; clearTimeout(BKT); BKT = setTimeout(function(){ if (navigator.onLine) bkUpload(false); }, 90000); }
+  setInterval(bkKick, 20 * 60000);
+  async function bkFetchCloud(metaOnly){
+    await loadFirebase(); var db = bkDb(), ref = db.collection("qsbackups").doc(lic.cid), m = await tmo(ref.get(), 20000);
+    if (!m.exists) return null; var meta = m.data(); if (metaOnly) return { meta: meta };
+    var parts = [];
+    for (var i = 0; i < meta.n; i++) { var c = await tmo(ref.collection("chunks").doc(String(i)).get(), 40000); if (!c.exists) throw new Error("جزء ناقص من النسخة السحابية"); parts.push(c.data().d); }
+    return { meta: meta, text: parts.join("") };
+  }
+  async function bkRestoreCloud(){
+    try {
+      bkSay("جارٍ تحميل النسخة...");
+      var r = await bkFetchCloud(false); if (!r) { bkSay("لا توجد نسخة سحابية لهذا الزبون."); return; }
+      bkSay(""); await bkRestoreText(r.text);
+    } catch (e) { bkSay("تعذّر التحميل: " + (e && e.message || e)); }
+  }
+  $("bkNow").addEventListener("click", function(){ state.bk.pass = $("bkPass").value; persist(); bkSay("جارٍ الرفع..."); bkUpload(true); });
+  $("bkPass").addEventListener("change", function(){ state.bk.pass = this.value; persist(); });
+  $("bkOn").addEventListener("change", function(){
+    state.bk.pass = $("bkPass").value;
+    if (this.checked && state.bk.pass.length < 6) { this.checked = false; bkSay("اكتب رمز الاسترجاع (6 أحرف على الأقل) قبل التفعيل."); return; }
+    state.bk.on = this.checked; persist(); if (this.checked) { bkSay("جارٍ الرفع الأول..."); bkUpload(true); }
+  });
+  $("bkRestoreCloud").addEventListener("click", function(){ askChoice("⚠️ استرجاع من السحابة", "سيتم استبدال بيانات هذا الجهاز بالنسخة السحابية.", [{ t: "متابعة", cls: "primary", fn: bkRestoreCloud }, { t: "إلغاء" }]); });
+  async function bkAfterUnlock(){
+    bkInfo();
+    var fresh = !state.rows.length && !state.users.length && !state.payments.length && !state.purchases.length;
+    if (!fresh || !bkCfgOk() || !navigator.onLine) return;
+    try {
+      var r = await bkFetchCloud(true); if (!r) return;
+      askChoice("♻️ وُجدت نسخة احتياطية لحسابك", "تاريخ آخر نسخة: " + String(r.meta.ts || "").replace("T", " ").slice(0, 16) + ". هل تريد استرجاع بياناتك الآن؟", [{ t: "استرجاع بياناتي", cls: "primary", fn: bkRestoreCloud }, { t: "تخطي" }]);
+    } catch (e) {}
+  }
 
   /* ---------- Tabs ---------- */
   var TABS = ["sales", "buy", "debts", "inv", "settings"];

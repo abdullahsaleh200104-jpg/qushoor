@@ -1,8 +1,8 @@
 /* مركز قشور الضاهر - Service Worker (يعمل بدون إنترنت) */
-var CACHE = "qushoor-v14";
+var CACHE = "qushoor-v15";
 var LOCAL = ["./", "./index.html", "./manifest.json",
   "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
-  "./lib/xlsx.full.min.js", "./lib/jspdf.umd.min.js"];
+  "./keys.js", "./lib/xlsx.full.min.js", "./lib/jspdf.umd.min.js"];
 var CDN = ["https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js",
   "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
   "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js",
@@ -36,6 +36,15 @@ self.addEventListener("fetch", function(e){
   var sameOrigin = url.origin === self.location.origin;
   var isCdn = CDN.indexOf(req.url) >= 0;
   if (!sameOrigin && !isCdn) return; /* واتساب وغيره: مباشرة */
+
+  /* ملفات إضافات الزبائن: من الشبكة أولاً (لتصل التحديثات فوراً) ثم الكاش للعمل بدون إنترنت */
+  if (sameOrigin && url.pathname.indexOf("/customers/") >= 0) {
+    e.respondWith(fetch(req).then(function(res){
+      if (res && res.ok) { var cp = res.clone(); caches.open(CACHE).then(function(c){ c.put(req, cp); }).catch(function(){}); }
+      return res;
+    }).catch(function(){ return caches.match(req).then(function(m){ return m || new Response("", { status: 504 }); }); }));
+    return;
+  }
 
   e.respondWith(
     caches.match(req, { ignoreSearch: true }).then(function(hit){
