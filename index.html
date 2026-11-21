@@ -451,10 +451,22 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
         <label>الاسم<input id="uName" autocomplete="off"></label>
         <label>كلمة السر<input id="uPass" type="password" autocomplete="off"></label>
       </div>
-      <label id="regWaBox" hidden style="margin-top:10px">رقم واتساب للاستعادة (بالصيغة الدولية)<input id="regWa" class="num" inputmode="tel" placeholder="963957767951" autocomplete="off"></label>
+      <label id="regWaBox" hidden style="margin-top:10px">رقم واتساب (إلزامي): تصلك عليه رسالة فيها اسم المستخدم ومفتاح الاسترجاع<input id="regWa" class="num" inputmode="tel" placeholder="مثال: 0957767951 أو 963957767951" autocomplete="off"></label>
       <button class="primary" id="uLogin" type="button">دخول</button>
-      <button id="forgotBtn" class="small" type="button" style="margin-top:8px" hidden>نسيت كلمة السر؟</button>
+      <button id="gLogin" type="button" hidden style="margin-top:8px">🔵 الدخول بحساب Google (Gmail)</button>
+      <button id="forgotBtn" class="small" type="button" style="margin-top:8px" hidden>نسيت كلمة السر أو اسم المستخدم؟</button>
       <div id="resetBox" hidden style="margin-top:10px">
+        <h3 style="margin-top:0">① لدي مفتاح الاسترجاع (من رسالة واتساب)</h3>
+        <div class="grid">
+          <label>مفتاح الاسترجاع<input id="rkIn" class="num" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off"></label>
+          <label>كلمة السر الجديدة<input id="rkPass" type="password" autocomplete="off"></label>
+        </div>
+        <button id="rkDo" type="button" class="primary" style="margin-top:8px">استرجاع حسابي</button>
+        <h3>② نسيت اسم المستخدم</h3>
+        <p class="tip">اكتب اسماً إن تذكّرت جزءاً منه، أو اتركه فارغاً لحساب المدير. تصل رسالة باسم المستخدم إلى رقم واتساب المسجّل للحساب.</p>
+        <button id="forgotUser" type="button" class="small">💬 أرسل اسم المستخدم إلى رقم واتساب المسجّل</button>
+        <details style="margin-top:12px"><summary style="font-weight:700;cursor:pointer">③ ضاع مني المفتاح أيضاً (طلب كود من المطوّر)</summary>
+
         <p class="tip">1) اضغط «إرسال طلب الاستعادة» فيظهر نص الطلب ويُفتح واتساب (ويمكنك نسخه وإرساله بأي طريقة). 2) عندما يصلك رمز الاستعادة الصقه أدناه مع كلمة سر جديدة. <b>إذا نسيت الاسم اترك خانة الاسم فارغة</b> وسيُطلب استعادة حساب المدير، وسيظهر لك الاسم بعد نجاح الاستعادة.</p>
         <label style="margin-top:8px">رقم واتساب الذي يُرسَل إليه الطلب (يُحفظ ويُستخدم كل مرة)
           <input id="resetWa" class="num" inputmode="tel" placeholder="مثال: 0957767951 أو 963957767951" autocomplete="off"></label>
@@ -469,9 +481,16 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
           <label>كلمة السر الجديدة<input id="resetPass" type="password" autocomplete="off"></label>
         </div>
         <button id="resetDo" type="button" class="primary" style="margin-top:8px">تعيين كلمة السر الجديدة</button>
+      
+        </details>
       </div>
     </div>
     <div id="invMain" hidden>
+      <details id="secCard" class="dev" style="margin-bottom:12px"><summary style="font-weight:800;cursor:pointer">🔐 أمان حسابي (واتساب + مفتاح الاسترجاع + Google)</summary>
+        <label style="margin-top:8px">رقم واتساب الحساب (تصله رسالة الاسترجاع)<input id="secWa" class="num" inputmode="tel" autocomplete="off"></label>
+        <div class="actions"><button id="secWaSave" class="small" type="button">حفظ الرقم</button><button id="secNewKey" class="small" type="button">🔑 مفتاح استرجاع جديد (يُبطل القديم)</button></div>
+        <div id="secG" hidden style="margin-top:8px"><p class="tip" id="secGInfo"></p><div class="actions" style="margin-top:0"><button id="secGoogle" class="small" type="button">🔗 ربط بحساب Google</button><button id="secGoogleOff" class="small danger" type="button" hidden>إلغاء الربط</button></div></div>
+      </details>
       <div class="grid">
         <label class="full">الفترة
           <select id="invPer"><option value="day">جرد يومي (اليوم)</option><option value="week">جرد أسبوعي (آخر 7 أيام)</option><option value="month">جرد شهري (الشهر الحالي)</option><option value="season">جرد الموسم الحالي</option><option value="manual">مدة أحددها يدوياً</option></select>
@@ -643,6 +662,28 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
     <button type="button" role="tab" id="tb-inv" aria-selected="false"><span class="ic">📊</span>الجرد</button>
     <button type="button" role="tab" id="tb-settings" aria-selected="false"><span class="ic">⚙️</span>الإعدادات</button>
   </nav>
+</div>
+
+<div class="dlg" id="rkDlg" hidden>
+  <div class="dlgbox" role="dialog" aria-modal="true" dir="rtl" style="max-height:92vh;overflow:auto">
+    <h2>🔑 مفتاح الاسترجاع</h2>
+    <p class="tip">احفظه الآن. إذا نسيت كلمة السر تلصقه في «نسيت كلمة السر؟» فتعيّن كلمة جديدة. <b>لن يظهر مرة ثانية.</b></p>
+    <div id="rkUser" style="font-weight:800"></div>
+    <div id="rkKey" style="direction:ltr;text-align:center;font-family:monospace;font-size:1.35rem;font-weight:800;letter-spacing:1px;background:var(--accent-soft);border-radius:10px;padding:12px;margin:8px 0;word-break:break-all"></div>
+    <div class="actions" style="margin-top:0"><button id="rkWa" type="button">📲 إرسال لرقمي على واتساب</button><button id="rkCopy" type="button">📋 نسخ</button></div>
+    <label class="chk"><input id="rkOk" type="checkbox"> حفظتُ المفتاح (رسالة واتساب أو ورقة) ولن أفقده</label>
+    <button class="primary" id="rkDone" type="button" disabled>تم</button>
+  </div>
+</div>
+
+<div class="dlg" id="secDlg" hidden>
+  <div class="dlgbox" role="dialog" aria-modal="true" dir="rtl">
+    <h2>🔐 تأمين حسابك</h2>
+    <p class="tip" style="line-height:1.8">نظام الحسابات صار أبسط وأأمن: أضف رقم واتساب لحسابك، ثم يُنشأ لك مفتاح استرجاع يصلك على هذا الرقم مع اسم المستخدم.</p>
+    <label>رقم واتساب (إلزامي)<input id="secDlgWa" class="num" inputmode="tel" placeholder="0957767951 أو 963957767951" autocomplete="off"></label>
+    <p class="err" id="secDlgErr" style="color:var(--danger);font-weight:700;min-height:1.4em;margin:0"></p>
+    <button class="primary" id="secDlgOk" type="button">متابعة</button>
+  </div>
 </div>
 
 <div class="dlg" id="bkDlg" hidden>
@@ -828,6 +869,7 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
         if (o.d !== id) return null;
         return { name: o.n, v: 2, cid: o.c || "", f: Array.isArray(o.f) ? o.f : null, s: o.s || 0 };
       }
+      if (window.QS_ALLOW_LEGACY !== true) return null;   /* الأكواد القديمة مُلغاة (إلا إذا سمح المطوّر مؤقتاً من keys.js) */
       var nm = await verifyCode(code, id);
       return nm ? { name: nm, v: 1, cid: "", f: null, s: 0 } : null;
     } catch (e) { return null; }
@@ -851,6 +893,7 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
     var L = saved ? await verifyLicense(saved, id) : null;
     if (L) { unlock(L); return; }
     $("gate").hidden = false;
+    if (saved) $("gateErr").textContent = "انتهت صلاحية كود التفعيل القديم. أرسل رقم جهازك للمطوّر ليُصدر لك كوداً جديداً. بياناتك محفوظة على هذا الجهاز ولن تُمسح.";
   }
   $("activate").addEventListener("click", async function(){
     var id = getDeviceId(), code = $("codeIn").value;
@@ -1390,11 +1433,13 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
     $("invTip").textContent = none ? "لا يوجد مستخدمون بعد. أنشئ حساب المدير: اكتب اسماً وكلمة سر (4 أحرف على الأقل)، وتصبح هي مفتاح الجرد." : "الجرد مقفل. أدخل اسمك وكلمة السر.";
     $("uLogin").textContent = none ? "إنشاء حساب المدير" : "دخول";
     $("regWaBox").hidden = !none; $("forgotBtn").hidden = none; if (none) $("resetBox").hidden = true;
+    $("gLogin").hidden = !(gOk() && !none);
   }
   function openInv(u){
     invUser = u; $("uPass").value = ""; $("invLogin").hidden = true; $("invMain").hidden = false; $("invLogout").hidden = false; invSay(""); renderInv(); calc(); renderBuy();
+    renderSec(); if (!u.rh || !u.w) secureStep(u);
   }
-  function lockInv(){ invUser = null; $("invLogin").hidden = false; $("invMain").hidden = true; $("invLogout").hidden = true; loginTip(); calc(); renderBuy(); }
+  function lockInv(){ if (gAuth) { try { gAuth.signOut(); } catch (e) {} } invUser = null; $("invLogin").hidden = false; $("invMain").hidden = true; $("invLogout").hidden = true; loginTip(); calc(); renderBuy(); }
   $("invLogout").addEventListener("click", function(){ lockInv(); invSay("تم قفل الجرد."); });
   $("uLogin").addEventListener("click", async function(){
     var n = $("uName").value.trim(), p = $("uPass").value;
@@ -1405,10 +1450,11 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
     if (!state.users.length) {
       if (p.length < 4) { invSay("كلمة السر 4 أحرف على الأقل.", 1); return; }
       var wa = cleanWa($("regWa").value); if (!wa) { invSay("اكتب رقم واتساب صحيحاً بالصيغة الدولية (مثال 963957767951).", 1); return; }
-      var nu = await mkUser(n, p, wa); state.users.push(nu); save(); openInv(nu); return;
+      var nu = await mkUser(n, p, wa), k0 = await setRecovery(nu); state.users.push(nu); save(); openInv(nu); showRecovery(nu, k0); return;
     }
     var u = findUserLoose(n);
     if (!u) { invSay("❌ الاسم غير صحيح: لا يوجد مستخدم باسم «" + n + "». (كلمة السر لم تُفحص بعد). إن نسيت الاسم اضغط «نسيت كلمة السر؟» واتركه فارغاً.", 1); $("uName").focus(); $("uName").select(); return; }
+    if (!u.h) { invSay("❌ هذا الحساب بلا كلمة سر. استخدم زر «الدخول بحساب Google».", 1); return; }
     var okp = (await sha(u.s + p)) === u.h;
     if (!okp && p !== p.trim()) okp = (await sha(u.s + p.trim())) === u.h;
     if (!okp) { invSay("❌ كلمة السر غير صحيحة للمستخدم «" + u.n + "» (الاسم صحيح ✔). تأكد من لغة لوحة المفاتيح وحالة الأحرف.", 1); $("uPass").focus(); $("uPass").select(); return; }
@@ -1456,7 +1502,7 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
     if (!n || p.length < 4) { invSay("اكتب الاسم وكلمة سر من 4 أحرف على الأقل.", 1); return; }
     if (!wa) { invSay("اكتب رقم واتساب صحيحاً بالصيغة الدولية.", 1); return; }
     if (state.users.some(function(x){ return x.n === n; })) { invSay("هذا الاسم موجود مسبقاً.", 1); return; }
-    state.users.push(await mkUser(n, p, wa)); save(); $("nName").value = ""; $("nPass").value = ""; $("nWa").value = ""; invSay("تمت إضافة المستخدم."); renderInv();
+    var nu2 = await mkUser(n, p, wa), k2 = await setRecovery(nu2); state.users.push(nu2); save(); $("nName").value = ""; $("nPass").value = ""; $("nWa").value = ""; invSay("تمت إضافة المستخدم."); renderInv(); showRecovery(nu2, k2);
   });
   $("seasonEnd").addEventListener("click", function(){
     if (!invUser) return;
@@ -1662,7 +1708,7 @@ function home_(ss, d) {
   $("resetShare").addEventListener("click", function(){ var t = $("resetMsg").value; if (navigator.share) navigator.share({ text: t }).catch(function(){}); else { $("resetCopy").click(); } });
   $("resetAgain").addEventListener("click", function(){ var t = $("resetMsg").value || (state.resetCh && state.resetCh.t) || ""; if (!t) { invSay("اضغط «إرسال طلب الاستعادة» أولاً.", 1); return; } openWa(resetTarget(), t); invSay("أُعيد فتح واتساب للرقم " + resetTarget() + "."); });
   async function verifyReset(code, id, ch){
-    var sig = String(code || "").replace(/\s+/g, ""), keys = [window.QS_PUB2, PUB];
+    var sig = String(code || "").replace(/\s+/g, ""), keys = window.QS_ALLOW_LEGACY === true ? [window.QS_PUB2, PUB] : [window.QS_PUB2];
     for (var i = 0; i < keys.length; i++) { if (!keys[i]) continue; try { if (await vfy(keys[i], "reset|" + id + "|" + ch, sig)) return true; } catch (e) {} }
     return false;
   }
@@ -2848,6 +2894,136 @@ function createSync(env){
       askChoice("♻️ وُجدت نسخة احتياطية لحسابك", "تاريخ آخر نسخة: " + String(r.meta.ts || "").replace("T", " ").slice(0, 16) + ". هل تريد استرجاع بياناتك الآن؟", [{ t: "استرجاع بياناتي", cls: "primary", fn: bkRestoreCloud }, { t: "تخطي" }]);
     } catch (e) {}
   }
+
+  /* ---------- حسابات مبسّطة: واتساب إلزامي + مفتاح استرجاع + دخول Google ---------- */
+  function rndHex(n){ return Array.from(crypto.getRandomValues(new Uint8Array(n))).map(function(x){ return x.toString(16).padStart(2, "0"); }).join(""); }
+  function newRecKey(){
+    var al = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", b = crypto.getRandomValues(new Uint8Array(16)), o = [];
+    for (var i = 0; i < 16; i++) o.push(al[b[i] % 32]);
+    return [o.slice(0, 4), o.slice(4, 8), o.slice(8, 12), o.slice(12, 16)].map(function(g){ return g.join(""); }).join("-");
+  }
+  function normKey(k){ return String(k || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); }
+  async function setRecovery(u){ var k = newRecKey(); u.rs = rndHex(8); u.rh = await sha(u.rs + normKey(k)); return k; }
+  var rkCur = null, rkAfter = null;
+  function recMessage(u, k){
+    return "🔐 حساب برنامج قشور الضاهر\nاسم المستخدم: " + u.n + "\nمفتاح الاسترجاع: " + k + "\n\nاحتفظ بهذه الرسالة. إذا نسيت كلمة السر افتح «نسيت كلمة السر؟» والصق المفتاح لتعيّن كلمة سر جديدة.";
+  }
+  function showRecovery(u, k, after){
+    rkCur = { u: u, k: k }; rkAfter = after || null;
+    $("rkUser").textContent = "اسم المستخدم: " + u.n; $("rkKey").textContent = k; $("rkOk").checked = false; $("rkDone").disabled = true; $("rkDlg").hidden = false;
+  }
+  $("rkOk").addEventListener("change", function(){ $("rkDone").disabled = !this.checked; });
+  $("rkDone").addEventListener("click", function(){ $("rkDlg").hidden = true; var f = rkAfter; rkCur = null; rkAfter = null; if (f) f(); });
+  $("rkCopy").addEventListener("click", function(){ if (!rkCur) return; var t = recMessage(rkCur.u, rkCur.k); try { navigator.clipboard.writeText(t); } catch (e) {} this.textContent = "✔ تم النسخ"; });
+  $("rkWa").addEventListener("click", function(){
+    if (!rkCur) return; var ph = waNum(rkCur.u.w);
+    if (!ph) { $("rkCopy").click(); return; }
+    openWa(ph, recMessage(rkCur.u, rkCur.k));
+  });
+  function secureStep(u){
+    $("secDlgWa").value = u.w || ""; $("secDlgErr").textContent = ""; $("secDlg").hidden = false;
+    $("secDlgOk").onclick = async function(){
+      var wn = waNum($("secDlgWa").value);
+      if (!wn) { $("secDlgErr").textContent = "❌ اكتب رقم واتساب صحيحاً (مثال: 0957767951 أو 963957767951)."; return; }
+      u.w = wn; var k = await setRecovery(u); save(); $("secDlg").hidden = true; renderSec(); showRecovery(u, k);
+    };
+  }
+  function renderSec(){
+    if (!invUser || !$("secWa")) return;
+    $("secWa").value = invUser.w || "";
+    $("secG").hidden = !gOk();
+    $("secGInfo").textContent = invUser.g ? "مرتبط بحساب: " + invUser.g : "غير مرتبط. اربطه لتدخل بضغطة واحدة بدون كلمة سر.";
+    $("secGoogle").hidden = !!invUser.g; $("secGoogleOff").hidden = !invUser.g;
+  }
+  $("secWaSave").addEventListener("click", function(){
+    if (!invUser) return; var wn = waNum($("secWa").value);
+    if (!wn) { invSay("❌ رقم واتساب غير صحيح.", 1); return; }
+    invUser.w = wn; save(); renderSec(); invSay("✅ تم حفظ رقم واتساب الحساب.");
+  });
+  $("secNewKey").addEventListener("click", function(){
+    if (!invUser) return;
+    askChoice("مفتاح استرجاع جديد", "سيُبطل المفتاح القديم ويظهر لك مفتاح جديد لتحفظه.", [{ t: "إنشاء", cls: "primary", fn: async function(){ var k = await setRecovery(invUser); save(); showRecovery(invUser, k); } }, { t: "إلغاء" }]);
+  });
+  $("forgotUser").addEventListener("click", function(){
+    var n = $("uName").value.trim(), u = n ? findUserLoose(n) : state.users[0];
+    if (n && !u) { invSay("❌ الاسم «" + n + "» غير مسجّل. اتركه فارغاً لحساب المدير.", 1); return; }
+    if (!u) { invSay("لا يوجد حساب.", 1); return; }
+    var ph = waNum(u.w);
+    if (!ph) { invSay("❌ لا يوجد رقم واتساب مسجّل لهذا الحساب (حساب قديم). ادخل بكلمة السر أو بحساب Google ثم أضف الرقم من «أمان حسابي»، أو اطلب كوداً من المطوّر (③).", 1); return; }
+    openWa(ph, "اسم المستخدم لحساب برنامج قشور الضاهر: " + u.n + "\n(كلمة السر محفوظة مشفّرة ولا يمكن إرسالها. للاسترجاع استخدم مفتاح الاسترجاع الذي وصلك عند إنشاء الحساب.)");
+    invSay("فُتح واتساب برسالة فيها اسم المستخدم إلى الرقم المسجّل (" + ph + ").");
+  });
+  var rkFails = 0, rkLock = 0;
+  $("rkDo").addEventListener("click", async function(){
+    if (Date.now() < rkLock) { invSay("❌ محاولات كثيرة خاطئة. انتظر نصف دقيقة.", 1); return; }
+    var k = normKey($("rkIn").value), np = $("rkPass").value;
+    if (k.length !== 16) { invSay("❌ مفتاح الاسترجاع 16 خانة (أحرف وأرقام) بالشكل XXXX-XXXX-XXXX-XXXX. انسخه كاملاً من رسالة واتساب.", 1); $("rkIn").focus(); return; }
+    if (np.length < 4) { invSay("❌ كلمة السر الجديدة 4 أحرف على الأقل.", 1); $("rkPass").focus(); return; }
+    var found = null;
+    for (var i = 0; i < state.users.length; i++) { var u = state.users[i]; if (u.rh && u.rs && (await sha(u.rs + k)) === u.rh) { found = u; break; } }
+    if (!found) {
+      rkFails++; if (rkFails >= 5) { rkLock = Date.now() + 30000; rkFails = 0; }
+      invSay("❌ مفتاح الاسترجاع غير صحيح، أو أنه قديم (كل استرجاع ناجح يُنشئ مفتاحاً جديداً ويُبطل القديم).", 1); return;
+    }
+    rkFails = 0; found.s = rndHex(8); found.h = await sha(found.s + np);
+    var nk = await setRecovery(found); save();
+    $("rkIn").value = ""; $("rkPass").value = ""; $("resetBox").hidden = true; $("uName").value = found.n;
+    invSay("✅ تم تعيين كلمة السر الجديدة للمستخدم «" + found.n + "». هذا اسم المستخدم، ادخل الآن بكلمة السر الجديدة.");
+    showRecovery(found, nk);
+  });
+
+  /* دخول Google (Firebase Authentication) — يلزمه QS_AUTH_FB في keys.js */
+  var gAuth = null;
+  function gOk(){ return !!window.QS_AUTH_FB; }
+  function loadFirebaseAuth(){
+    if (window.firebase && firebase.auth) return Promise.resolve();
+    var b = "https://www.gstatic.com/firebasejs/" + FBV + "/", p = (window.firebase ? Promise.resolve() : loadScript(b + "firebase-app-compat.js"));
+    return p.then(function(){ return loadScript(b + "firebase-auth-compat.js"); });
+  }
+  async function gInit(){
+    if (gAuth) return gAuth; await loadFirebaseAuth();
+    var app; try { app = firebase.app("qsauth"); } catch (e) { app = firebase.initializeApp(window.QS_AUTH_FB, "qsauth"); }
+    gAuth = firebase.auth(app); return gAuth;
+  }
+  async function gSignIn(mode){
+    if (!navigator.onLine) throw new Error("offline");
+    var a = await gInit(), pr = new firebase.auth.GoogleAuthProvider(); pr.setCustomParameters({ prompt: "select_account" });
+    try { var r = await a.signInWithPopup(pr); return r.user; }
+    catch (e) {
+      if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")) { try { sessionStorage.setItem("qsGMode", mode || "login"); } catch (x) {} await a.signInWithRedirect(pr); return null; }
+      throw e;
+    }
+  }
+  function gErr(e){
+    var c = e && (e.code || e.message) || "";
+    if (c === "offline") return "الدخول بـ Google يحتاج إنترنت. استخدم الاسم وكلمة السر.";
+    if (c === "auth/popup-closed-by-user" || c === "auth/cancelled-popup-request") return "أُغلقت نافذة Google قبل إكمال الدخول.";
+    if (c === "auth/unauthorized-domain") return "نطاق الموقع غير مضاف في Firebase ← Authentication ← Settings ← Authorized domains.";
+    if (c === "auth/operation-not-allowed") return "لم يُفعَّل مزوّد Google في Firebase ← Authentication ← Sign-in method.";
+    return String(c || "خطأ غير معروف");
+  }
+  async function gAfter(user, mode){
+    var email = String(user.email || "").toLowerCase();
+    if (mode === "link") {
+      if (!invUser) return;
+      if (state.users.some(function(x){ return x !== invUser && x.g === email; })) { invSay("❌ حساب Google هذا مرتبط بمستخدم آخر.", 1); try { await gAuth.signOut(); } catch (e) {} return; }
+      invUser.g = email; save(); renderSec(); invSay("✅ تم ربط الحساب بـ " + email + ". تقدر تدخل به من زر «الدخول بحساب Google»."); return;
+    }
+    var u = state.users.filter(function(x){ return x.g === email; })[0];
+    if (!u) { invSay("❌ حساب Google «" + email + "» غير مرتبط بأي مستخدم. ادخل بالاسم وكلمة السر أولاً ثم اربطه من «أمان حسابي».", 1); try { await gAuth.signOut(); } catch (e) {} return; }
+    openInv(u); invSay("✅ تم الدخول بحساب Google (" + email + ").");
+  }
+  $("gLogin").addEventListener("click", async function(){
+    try { var u = await gSignIn("login"); if (u) await gAfter(u, "login"); } catch (e) { invSay("❌ تعذّر الدخول بـ Google: " + gErr(e), 1); }
+  });
+  $("secGoogle").addEventListener("click", async function(){
+    try { var u = await gSignIn("link"); if (u) await gAfter(u, "link"); } catch (e) { invSay("❌ تعذّر الربط: " + gErr(e), 1); }
+  });
+  $("secGoogleOff").addEventListener("click", function(){ if (invUser) { delete invUser.g; save(); renderSec(); invSay("تم إلغاء ربط Google."); } });
+  (function(){
+    var m = null; try { m = sessionStorage.getItem("qsGMode"); } catch (e) {}
+    if (m && gOk()) { try { sessionStorage.removeItem("qsGMode"); } catch (e) {} gInit().then(function(a){ return a.getRedirectResult(); }).then(function(r){ if (r && r.user) { if (m === "login") showTab("inv"); return gAfter(r.user, m); } }).catch(function(e){ invSay("❌ " + gErr(e), 1); }); }
+  })();
 
   /* ---------- Tabs ---------- */
   var TABS = ["sales", "buy", "debts", "inv", "settings"];
