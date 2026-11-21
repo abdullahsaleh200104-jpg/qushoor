@@ -874,6 +874,23 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
       return nm ? { name: nm, v: 1, cid: "", f: null, s: 0 } : null;
     } catch (e) { return null; }
   }
+  function kidOf(pub){ return pub && pub.x ? String(pub.x).slice(0, 8) : "—"; }
+  async function licenseWhy(code, id){
+    code = String(code || "").replace(/\s+/g, "");
+    if (code.indexOf("L2.") !== 0) return "الكود لا يبدأ بـ L2. هذا ليس الكود الجديد (الأكواد القديمة أُلغيت). اطلب كوداً جديداً.";
+    var p = code.slice(3).split(".");
+    if (p.length !== 2 || p[0].length < 20 || p[1].length < 80) return "الكود ناقص أو مقطوع. انسخه كاملاً (طوله حوالي 280 حرفاً، وبدون مسافات أو سطور مكسورة).";
+    if (!window.QS_PUB2) return "ملف keys.js غير موجود أو فارغ على الموقع. أنشئه من لوحة المطوّر (القسم ②) وارفعه بجانب index.html ثم أعد فتح البرنامج مرتين.";
+    var o = null; try { o = JSON.parse(new TextDecoder().decode(b64uToBytes(p[0]))); } catch (e) { return "الكود تالف أو غير مكتمل. انسخه من جديد."; }
+    var sigOk = false; try { sigOk = await vfy(window.QS_PUB2, "qushoor2|" + p[0], p[1]); } catch (e) {}
+    if (!sigOk) {
+      var k2 = kidOf(window.QS_PUB2);
+      if (o && o.k && o.k !== k2) return "الكود موقَّع بمفتاح بصمته «" + o.k + "» لكن ملف keys.js المرفوع فيه مفتاح بصمته «" + k2 + "». أنشئ keys.js من نفس المفتاح الذي ولّدت به الكود، وارفعه، ثم أعد فتح البرنامج مرتين (الكاش).";
+      return "توقيع الكود لا يطابق المفتاح الموجود في keys.js (بصمته «" + k2 + "»). غالباً keys.js قديم أو من مفتاح مختلف، أو الكود تغيّر أثناء النسخ.";
+    }
+    if (o.d !== id) return "الكود صحيح لكنه مخصص لجهاز آخر: «" + o.d + "» بينما رقم هذا الجهاز «" + id + "». أصدر الكود لرقم الجهاز الظاهر هنا بالضبط. (ملاحظة: التطبيق المثبّت على الشاشة الرئيسية والمتصفح العادي لهما رقمان مختلفان.)";
+    return "تعذّر التحقق من الكود لسبب غير معروف.";
+  }
   function unlock(L){
     lic = L; licensed = true; licName = L.name;
     $("gate").hidden = true; $("appWrap").hidden = false;
@@ -900,8 +917,7 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
     if (!code.trim()) { $("gateErr").textContent = "الصق رمز التفعيل أولاً."; return; }
     var L = await verifyLicense(code, id);
     if (!L) {
-      var c2 = code.replace(/\s+/g, "");
-      $("gateErr").textContent = (c2.indexOf("L2.") === 0 && !window.QS_PUB2) ? "ملف keys.js غير موجود أو لم يُرفع مع البرنامج (المطوّر يرفعه بجانب index.html)." : "الرمز غير صحيح أو أنه لجهاز آخر. تأكد من نسخه كاملاً، أو أرسل رقم جهازك للمطوّر.";
+      $("gateErr").textContent = "❌ " + await licenseWhy(code, id);
       return;
     }
     try { localStorage.setItem(LKEY, code.replace(/\s+/g, "")); } catch (e) {}
@@ -2717,7 +2733,7 @@ function createSync(env){
     var el = $("licInfo"); if (!el) return;
     var fl = lic.f ? lic.f.map(function(k){ return FEATN[k] || k; }).join("، ") : "كل الميزات";
     el.innerHTML = "";
-    [["الاسم", lic.name], ["رقم الزبون", lic.cid || "—"], ["نوع الترخيص", lic.v === 2 ? "v2 (ميزات مخصصة)" : "v1 (قديم)"], ["الميزات", fl], ["إضافات خاصة بك", pluginState || "لا يوجد"], ["رقم هذا الجهاز", getDeviceId()]].forEach(function(r){
+    [["الاسم", lic.name], ["رقم الزبون", lic.cid || "—"], ["نوع الترخيص", lic.v === 2 ? "v2 (ميزات مخصصة)" : "v1 (قديم)"], ["الميزات", fl], ["إضافات خاصة بك", pluginState || "لا يوجد"], ["رقم هذا الجهاز", getDeviceId()], ["بصمة مفتاح keys.js", kidOf(window.QS_PUB2)]].forEach(function(r){
       var d = document.createElement("div"); d.textContent = r[0] + ": " + r[1]; el.appendChild(d);
     });
   }
@@ -2725,7 +2741,7 @@ function createSync(env){
     var m = $("licMsg"), code = $("licNew").value.replace(/\s+/g, "");
     if (!code) { m.textContent = "الصق الكود أولاً."; return; }
     var L = await verifyLicense(code, getDeviceId());
-    if (!L) { m.textContent = "❌ الكود غير صحيح أو أنه لجهاز آخر."; return; }
+    if (!L) { m.textContent = "❌ " + await licenseWhy(code, getDeviceId()); return; }
     if (lic.cid && L.cid && L.cid !== lic.cid) { m.textContent = "❌ هذا الكود لزبون مختلف."; return; }
     if (L.s < lic.s) { m.textContent = "❌ هذا الكود أقدم من ترخيصك الحالي."; return; }
     try { localStorage.setItem(LKEY, code); } catch (e) {}

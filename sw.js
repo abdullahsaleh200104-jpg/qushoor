@@ -1,5 +1,5 @@
 /* مركز قشور الضاهر - Service Worker (يعمل بدون إنترنت) */
-var CACHE = "qushoor-v16";
+var CACHE = "qushoor-v17";
 var LOCAL = ["./", "./index.html", "./manifest.json",
   "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
   "./keys.js", "./lib/xlsx.full.min.js", "./lib/jspdf.umd.min.js"];
@@ -38,7 +38,7 @@ self.addEventListener("fetch", function(e){
   if (!sameOrigin && !isCdn) return; /* واتساب وغيره: مباشرة */
 
   /* ملفات إضافات الزبائن: من الشبكة أولاً (لتصل التحديثات فوراً) ثم الكاش للعمل بدون إنترنت */
-  if (sameOrigin && url.pathname.indexOf("/customers/") >= 0) {
+  if (sameOrigin && (url.pathname.indexOf("/customers/") >= 0 || /\/keys\.js$/.test(url.pathname))) {
     e.respondWith(fetch(req).then(function(res){
       if (res && res.ok) { var cp = res.clone(); caches.open(CACHE).then(function(c){ c.put(req, cp); }).catch(function(){}); }
       return res;
