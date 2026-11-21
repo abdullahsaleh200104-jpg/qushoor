@@ -170,6 +170,7 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
 .cfi .df{font-size:.9rem;padding:2px 0}
 .dev{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px}
 .dev label.chk{padding:2px 0}
+body[data-nopay="1"] #payBlock,body[data-nopay="1"] #cdPayBlock,body[data-nodebt="1"] #payDebt,body[data-nodisc="1"] #discBox,body[data-nohist="1"] #cdHist{display:none!important}
 [hidden]{display:none!important}
 @media (max-width:420px){.grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:no-preference){button{transition:opacity .15s}}
@@ -416,7 +417,7 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
     </section>
     <section class="card" id="custDetail" hidden></section>
   <section class="card" id="debtsCard" aria-label="الديون والفواتير">
-    <h2 style="margin:0 0 6px;font-size:1.1rem">💵 تسديد دين (سريع) وفواتير عامة</h2>
+    <div id="payBlock"><h2 style="margin:0 0 6px;font-size:1.1rem">💵 تسديد دين (سريع)</h2>
     <div class="grid">
       <label>الزبون <select id="payCust"></select></label>
       <label>المبلغ المسدّد ($) <input id="payAmt" class="num" inputmode="decimal" placeholder="0" autocomplete="off"></label>
@@ -424,7 +425,7 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
       <div id="payShamBox" class="full" hidden></div>
     </div>
     <p class="tip debt" id="payInfo" style="margin-top:6px"></p>
-    <button id="payBtn" type="button" style="margin-top:8px">تسجيل التسديد</button>
+    <button id="payBtn" type="button" style="margin-top:8px">تسجيل التسديد</button></div>
     <div id="invBlock"><h3>🧾 فاتورة PDF</h3>
     <div class="grid">
       <label>الفاتورة لـ
@@ -452,8 +453,15 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
       <button class="primary" id="uLogin" type="button">دخول</button>
       <button id="forgotBtn" class="small" type="button" style="margin-top:8px" hidden>نسيت كلمة السر؟</button>
       <div id="resetBox" hidden style="margin-top:10px">
-        <p class="tip">1) اكتب اسمك في خانة الاسم ثم اضغط «طلب الاستعادة»: تُفتح رسالة واتساب للمطوّر فيها رقمك المسجّل ورمز تحدٍّ. 2) بعد أن يتحقق المطوّر من رقمك يرسل لك رمز استعادة. 3) الصقه هنا مع كلمة السر الجديدة.</p>
-        <button id="resetReq" type="button" class="primary" style="margin-top:6px">طلب الاستعادة عبر واتساب</button>
+        <p class="tip">1) اضغط «إرسال طلب الاستعادة» فيظهر نص الطلب ويُفتح واتساب (ويمكنك نسخه وإرساله بأي طريقة). 2) عندما يصلك رمز الاستعادة الصقه أدناه مع كلمة سر جديدة. <b>إذا نسيت الاسم اترك خانة الاسم فارغة</b> وسيُطلب استعادة حساب المدير، وسيظهر لك الاسم بعد نجاح الاستعادة.</p>
+        <label style="margin-top:8px">رقم واتساب الذي يُرسَل إليه الطلب (يُحفظ ويُستخدم كل مرة)
+          <input id="resetWa" class="num" inputmode="tel" placeholder="مثال: 0957767951 أو 963957767951" autocomplete="off"></label>
+        <p class="tip" id="resetWaNote" style="margin-top:4px"></p>
+        <button id="resetReq" type="button" class="primary" style="margin-top:6px">إرسال طلب الاستعادة عبر واتساب</button>
+        <div id="resetOut" hidden style="margin-top:8px">
+          <textarea id="resetMsg" readonly rows="6"></textarea>
+          <div class="actions" style="margin-top:6px"><button id="resetCopy" class="small" type="button">📋 نسخ النص</button><button id="resetShare" class="small" type="button">📤 مشاركة...</button><button id="resetAgain" class="small" type="button">💬 إعادة الإرسال عبر واتساب</button></div>
+        </div>
         <div class="grid" style="margin-top:10px">
           <label>رمز الاستعادة<input id="resetCode" class="num" autocomplete="off"></label>
           <label>كلمة السر الجديدة<input id="resetPass" type="password" autocomplete="off"></label>
@@ -523,6 +531,12 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
       <div class="mgr-only" id="cloudMgr">
         <h3>➕ دعوة جهاز جديد</h3>
         <div class="actions"><button id="invW" type="button">رمز ربط لجهاز عامل</button><button id="invM" type="button">رمز لمدير إضافي</button></div>
+        <div id="invPermBox" hidden class="dev" style="margin-top:8px">
+          <p class="tip" style="margin-bottom:6px">اختر بنفسك ما يُسمح للعامل به. ما لا تحدده <b>لن يظهر عنده إطلاقاً</b> (تقدر تغيّره لاحقاً من قائمة الأجهزة).</p>
+          <div id="invPermList"></div>
+          <div class="actions"><button id="invPermBasic" class="small" type="button">الأساسي</button><button id="invPermAll" class="small" type="button">تحديد الكل</button><button id="invPermNone" class="small" type="button">إلغاء الكل</button></div>
+          <button id="invMake" class="primary" type="button" style="margin-top:8px">إنشاء رمز الربط بهذه الصلاحيات</button>
+        </div>
         <div id="invCodeBox" hidden style="margin-top:8px">
           <textarea id="invCode" readonly rows="4"></textarea>
           <p class="tip" id="invNote" style="margin:6px 0"></p>
@@ -679,7 +693,7 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
   var $ = function(id){ return document.getElementById(id); };
   var state = {
     types: ["قشور فستق", "قشور لوز", "قشور جوز", "قشور بندق"],
-    prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], delMode: "admin", sync: { url: "", key: "", auto: false }, autoXl: { on: false, last: 0 }, purchases: [], expenses: [], shamQR: "", shamInfo: "", customers: [], warnDup: true, cloud: { on: false }, cm: {}, conflicts: []
+    prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], delMode: "admin", sync: { url: "", key: "", auto: false }, autoXl: { on: false, last: 0 }, purchases: [], expenses: [], shamQR: "", shamInfo: "", customers: [], warnDup: true, resetWa: "", cloud: { on: false }, cm: {}, conflicts: []
   };
   try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.types) state = Object.assign(state, s); } catch (e) {}
   state.cm = state.cm || {}; state.conflicts = state.conflicts || []; state.cloud = state.cloud || { on: false }; state.customers = state.customers || []; state.purchases = state.purchases || []; state.expenses = state.expenses || []; state.payments = state.payments || []; state.seasons = state.seasons || [];
@@ -797,7 +811,7 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
   });
   $("waId").addEventListener("click", function(){
     var t = "مرحباً، أريد تفعيل برنامج مركز قشور الضاهر. رقم جهازي: " + $("devId").textContent;
-    window.open("https://wa.me/963957767951?text=" + encodeURIComponent(t), "_blank", "noopener");
+    openWa("963957767951", t);
   });
 
   /* ---------- types ---------- */
@@ -929,7 +943,9 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
     var tb = $("rows"); tb.innerHTML = "";
     var sT = 0, sD = 0, sA = 0, sPaid = 0, sRem = 0;
     var query = $("search").value.trim().toLowerCase();
+    var histOk = can("hist"), todayS = today();
     var filtered = state.rows.filter(function(x){
+      if (!histOk && x.date !== todayS) return false;
       return !query || x.customer.toLowerCase().indexOf(query) >= 0 || x.type.toLowerCase().indexOf(query) >= 0;
     });
     if (!filtered.length) tb.innerHTML = '<tr><td class="empty" colspan="13">لا توجد نتائج مطابقة للبحث أو القائمة فارغة.</td></tr>';
@@ -1297,7 +1313,17 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
   var invUser = null;
   function invSay(t, bad){ var m = $("invMsg"); m.textContent = t; m.style.color = bad ? "var(--danger)" : ""; }
   async function sha(t){ var b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return Array.from(new Uint8Array(b)).map(function(x){ return x.toString(16).padStart(2, "0"); }).join(""); }
-  function cleanWa(v){ var d = String(v || "").replace(/[٠-٩]/g, function(x){ return x.charCodeAt(0) - 1632; }).replace(/\D/g, ""); return d.length >= 8 && d.length <= 15 ? d : ""; }
+  function cleanWa(v){ return waNum(v); }
+  function openWa(num, text){
+    var url = "https://wa.me/" + (num || "") + "?text=" + encodeURIComponent(text), w = null;
+    try { w = window.open(url, "_blank"); } catch (e) {}
+    if (!w) location.href = url;
+  }
+  function findUserLoose(n){
+    var x = state.users.filter(function(u){ return u.n === n; })[0]; if (x) return x;
+    var k = normName(n); if (!k) return null;
+    return state.users.filter(function(u){ return normName(u.n) === k; })[0] || null;
+  }
   async function mkUser(n, p, w){ var s = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(function(x){ return x.toString(16).padStart(2, "0"); }).join(""); return { n: n, s: s, h: await sha(s + p), w: w || "" }; }
   function loginTip(){
     var none = !state.users.length;
@@ -1313,14 +1339,19 @@ body[data-noedit="1"] [data-act="edit"],body[data-nodel="1"] [data-act="del"],bo
   $("uLogin").addEventListener("click", async function(){
     var n = $("uName").value.trim(), p = $("uPass").value;
     if (!window.crypto || !crypto.subtle) { invSay("هذا المتصفح لا يدعم التشفير المطلوب.", 1); return; }
-    if (!n || !p) { invSay("اكتب الاسم وكلمة السر.", 1); return; }
+    if (!n && !p) { invSay("اكتب الاسم وكلمة السر.", 1); $("uName").focus(); return; }
+    if (!n) { invSay("❌ خانة الاسم فارغة: اكتب اسم المستخدم.", 1); $("uName").focus(); return; }
+    if (!p) { invSay("❌ خانة كلمة السر فارغة: اكتب كلمة السر.", 1); $("uPass").focus(); return; }
     if (!state.users.length) {
       if (p.length < 4) { invSay("كلمة السر 4 أحرف على الأقل.", 1); return; }
       var wa = cleanWa($("regWa").value); if (!wa) { invSay("اكتب رقم واتساب صحيحاً بالصيغة الدولية (مثال 963957767951).", 1); return; }
       var nu = await mkUser(n, p, wa); state.users.push(nu); save(); openInv(nu); return;
     }
-    var u = state.users.filter(function(x){ return x.n === n; })[0];
-    if (!u || (await sha(u.s + p)) !== u.h) { invSay("الاسم أو كلمة السر غير صحيحة.", 1); return; }
+    var u = findUserLoose(n);
+    if (!u) { invSay("❌ الاسم غير صحيح: لا يوجد مستخدم باسم «" + n + "». (كلمة السر لم تُفحص بعد). إن نسيت الاسم اضغط «نسيت كلمة السر؟» واتركه فارغاً.", 1); $("uName").focus(); $("uName").select(); return; }
+    var okp = (await sha(u.s + p)) === u.h;
+    if (!okp && p !== p.trim()) okp = (await sha(u.s + p.trim())) === u.h;
+    if (!okp) { invSay("❌ كلمة السر غير صحيحة للمستخدم «" + u.n + "» (الاسم صحيح ✔). تأكد من لغة لوحة المفاتيح وحالة الأحرف.", 1); $("uPass").focus(); $("uPass").select(); return; }
     openInv(u);
   });
   function renderInv(){
@@ -1541,17 +1572,35 @@ function home_(ss, d) {
   });
 
   /* ---------- Forgot password (WhatsApp + developer code) ---------- */
-  $("forgotBtn").addEventListener("click", function(){ $("resetBox").hidden = !$("resetBox").hidden; });
+  var DEV_WA = "963957767951";
+  function resetTarget(){ return state.resetWa || DEV_WA; }
+  function showResetNote(){
+    $("resetWa").value = state.resetWa || "";
+    $("resetWaNote").textContent = state.resetWa ? "سيُرسل الطلب إلى الرقم المحفوظ: " + state.resetWa + " (امسح الخانة واحفظ للرجوع لرقم المطوّر)." : "إن تركته فارغاً يُرسل الطلب إلى رقم المطوّر " + DEV_WA + ".";
+  }
+  $("forgotBtn").addEventListener("click", function(){ $("resetBox").hidden = !$("resetBox").hidden; if (!$("resetBox").hidden) showResetNote(); });
+  function buildResetText(u, nameless, ch){
+    return "طلب استعادة كلمة سر الجرد - برنامج قشور الضاهر\nالمستخدم: " + u.n + (nameless ? " (نسي اسم المستخدم)" : "") + "\nرقم واتساب المسجّل: " + (u.w || "غير مسجّل") + "\nرقم الجهاز: " + getDeviceId() + "\nرمز التحدي: " + ch;
+  }
   $("resetReq").addEventListener("click", function(){
-    var n = $("uName").value.trim(), u = state.users.filter(function(x){ return x.n === n; })[0];
-    if (!u) { invSay("اكتب اسمك الصحيح في خانة الاسم أولاً.", 1); return; }
+    var n = $("uName").value.trim(), u = n ? findUserLoose(n) : null, nameless = !n;
+    if (n && !u) { invSay("❌ الاسم «" + n + "» غير مسجّل. إن نسيت الاسم اترك خانة الاسم فارغة ثم اضغط إرسال الطلب.", 1); $("uName").focus(); return; }
+    if (!u) u = state.users[0];
+    if (!u) { invSay("لا يوجد حساب مدير لاستعادته.", 1); return; }
+    var typed = $("resetWa").value.trim(), wn = waNum(typed);
+    if (typed && !wn) { invSay("❌ رقم واتساب غير صحيح. اكتبه مثل 0957767951 أو 963957767951 (بدون مسافات أو رموز).", 1); $("resetWa").focus(); return; }
+    state.resetWa = wn;   /* فارغ = رقم المطوّر */
     var al = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", a = crypto.getRandomValues(new Uint8Array(8)), ch = "";
     for (var i = 0; i < 8; i++) ch += al[a[i] % 32];
-    state.resetCh = { n: n, c: ch }; save();
-    var t = "طلب استعادة كلمة سر الجرد - برنامج قشور الضاهر\nالمستخدم: " + n + "\nرقم واتساب المسجّل: " + (u.w || "غير مسجّل") + "\nرقم الجهاز: " + getDeviceId() + "\nرمز التحدي: " + ch;
-    window.open("https://wa.me/963957767951?text=" + encodeURIComponent(t), "_blank", "noopener");
-    invSay("أُرسل الطلب. عندما يصلك رمز الاستعادة الصقه أدناه.");
+    var t = buildResetText(u, nameless, ch);
+    state.resetCh = { n: u.n, c: ch, t: t }; save(); showResetNote();
+    $("resetMsg").value = t; $("resetOut").hidden = false;
+    openWa(resetTarget(), t);
+    invSay("تم تجهيز الطلب وفُتح واتساب للرقم " + resetTarget() + ". إن لم يُفتح اضغط «نسخ النص» وأرسله يدوياً. عندما يصلك رمز الاستعادة الصقه أدناه.");
   });
+  $("resetCopy").addEventListener("click", function(){ var t = $("resetMsg"); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand("copy"); } invSay("تم نسخ نص الطلب."); });
+  $("resetShare").addEventListener("click", function(){ var t = $("resetMsg").value; if (navigator.share) navigator.share({ text: t }).catch(function(){}); else { $("resetCopy").click(); } });
+  $("resetAgain").addEventListener("click", function(){ var t = $("resetMsg").value || (state.resetCh && state.resetCh.t) || ""; if (!t) { invSay("اضغط «إرسال طلب الاستعادة» أولاً.", 1); return; } openWa(resetTarget(), t); invSay("أُعيد فتح واتساب للرقم " + resetTarget() + "."); });
   async function verifyReset(code, id, ch){
     try {
       var sig = b64uToBytes(String(code || "").replace(/\s+/g, ""));
@@ -1561,14 +1610,16 @@ function home_(ss, d) {
   }
   $("resetDo").addEventListener("click", async function(){
     var rc = state.resetCh, np = $("resetPass").value;
-    if (!rc) { invSay("اضغط «طلب الاستعادة عبر واتساب» أولاً.", 1); return; }
-    if (np.length < 4) { invSay("كلمة السر الجديدة 4 أحرف على الأقل.", 1); return; }
-    if (!(await verifyReset($("resetCode").value, getDeviceId(), rc.c))) { invSay("رمز الاستعادة غير صحيح.", 1); return; }
+    if (!rc) { invSay("اضغط «إرسال طلب الاستعادة عبر واتساب» أولاً.", 1); return; }
+    if (np.length < 4) { invSay("❌ كلمة السر الجديدة 4 أحرف على الأقل.", 1); $("resetPass").focus(); return; }
+    if (!String($("resetCode").value).trim()) { invSay("❌ الصق رمز الاستعادة الذي وصلك في خانة «رمز الاستعادة».", 1); $("resetCode").focus(); return; }
+    if (!(await verifyReset($("resetCode").value, getDeviceId(), rc.c))) { invSay("❌ رمز الاستعادة غير صحيح: إما نُسخ ناقصاً، أو أنه لطلب سابق (كل طلب جديد يُنشئ رمز تحدٍّ جديداً فلا يصلح رمز قديم)، أو لجهاز آخر.", 1); return; }
     var idx = -1; state.users.forEach(function(x, i){ if (x.n === rc.n) idx = i; });
     if (idx < 0) { invSay("المستخدم غير موجود.", 1); return; }
     state.users[idx] = await mkUser(rc.n, np, state.users[idx].w);
-    delete state.resetCh; save(); $("resetCode").value = ""; $("resetPass").value = ""; $("resetBox").hidden = true;
-    invSay("تم تغيير كلمة السر. ادخل الآن بالكلمة الجديدة.");
+    delete state.resetCh; save(); $("resetCode").value = ""; $("resetPass").value = ""; $("resetBox").hidden = true; $("resetOut").hidden = true;
+    $("uName").value = rc.n;
+    invSay("✅ تم تغيير كلمة السر للمستخدم «" + rc.n + "». اسم المستخدم هو «" + rc.n + "»، ادخل الآن بكلمة السر الجديدة.");
   });
 
   /* ---------- Delete protection (admin password) ---------- */
@@ -1788,6 +1839,7 @@ function home_(ss, d) {
     var d = String(v || "").replace(/[٠-٩]/g, function(x){ return x.charCodeAt(0) - 1632; }).replace(/\D/g, "");
     if (d.indexOf("00") === 0) d = d.slice(2);
     else if (d.length === 10 && d.charAt(0) === "0") d = "963" + d.slice(1);
+    else if (d.length === 11 && d.charAt(0) === "0" && d.charAt(1) === "5") d = "90" + d.slice(1);
     return d.length >= 8 && d.length <= 15 ? d : "";
   }
   function getMeta(name, create){
@@ -1836,12 +1888,12 @@ function home_(ss, d) {
       '<label class="full">ملاحظات<input id="cdNotes" autocomplete="off"></label></div>' +
       '<button id="cdSave" class="small" type="button" style="margin-top:8px">💾 حفظ بيانات الزبون</button>' +
       '<div id="cdSum" style="margin-top:12px"></div>' +
-      '<h3>💵 تسديد دين</h3><div class="grid"><label>المبلغ المسدّد ($)<input id="cdPayAmt" class="num" inputmode="decimal" placeholder="0" autocomplete="off"></label>' +
+      '<div id="cdPayBlock"><h3>💵 تسديد دين</h3><div class="grid"><label>المبلغ المسدّد ($)<input id="cdPayAmt" class="num" inputmode="decimal" placeholder="0" autocomplete="off"></label>' +
       '<label>وسيلة الدفع<select id="cdPayM"><option value="كاش">💵 كاش</option><option value="شام كاش">📱 شام كاش</option></select></label><div id="cdSham" class="full" hidden></div></div>' +
-      '<button id="cdPay" class="primary" type="button" style="margin-top:8px">تسجيل التسديد</button>' +
+      '<button id="cdPay" class="primary" type="button" style="margin-top:8px">تسجيل التسديد</button></div>' +
       '<div class="actions"><button id="cdInv" type="button">🧾 فاتورة PDF للزبون</button><button id="cdWa" type="button">💬 تذكير بالدين (واتساب)</button></div>' +
-      '<h3>عمليات الزبون</h3><input id="cdSearch" placeholder="بحث في عمليات الزبون (صنف، تاريخ، دين، شام كاش...)" autocomplete="off">' +
-      '<div class="tablewrap" style="margin-top:8px"><table style="min-width:740px"><thead><tr><th>التاريخ</th><th>النوع</th><th>الكمية (طن)</th><th>الكمية (كغ)</th><th>الدفع</th><th>المبلغ $</th><th>المدفوع $</th><th class="debt">الباقي $</th><th></th></tr></thead><tbody id="cdRows"></tbody><tfoot id="cdFoot"></tfoot></table></div>' +
+      '<div id="cdHist"><h3>عمليات الزبون</h3><input id="cdSearch" placeholder="بحث في عمليات الزبون (صنف، تاريخ، دين، شام كاش...)" autocomplete="off">' +
+      '<div class="tablewrap" style="margin-top:8px"><table style="min-width:740px"><thead><tr><th>التاريخ</th><th>النوع</th><th>الكمية (طن)</th><th>الكمية (كغ)</th><th>الدفع</th><th>المبلغ $</th><th>المدفوع $</th><th class="debt">الباقي $</th><th></th></tr></thead><tbody id="cdRows"></tbody><tfoot id="cdFoot"></tfoot></table></div></div>' +
       '<h3>التسديدات</h3><div id="cdPays"></div><p class="tip" id="cdOld" style="margin-top:8px"></p>' +
       '<button id="cdDel" class="danger small" type="button" style="margin-top:10px">حذف الزبون</button>';
     $("cdName").value = name; $("cdPhone").value = m.phone || ""; $("cdNotes").value = m.notes || "";
@@ -1871,7 +1923,7 @@ function home_(ss, d) {
       var ph = waNum($("cdPhone").value), debt = custDebt(curCust);
       if (!ph) { say("اكتب رقم هاتف صحيحاً للزبون وحفظه أولاً."); return; }
       var t = "السلام عليكم " + curCust + "، تذكير ودّي: " + (debt > 0 ? "يوجد رصيد مستحق عليكم بقيمة " + fmt(debt) + " دولار" : "حسابكم لدينا مسدَّد") + " لدى مركز قشور الضاهر. شكراً لكم.";
-      window.open("https://wa.me/" + ph + "?text=" + encodeURIComponent(t), "_blank", "noopener");
+      openWa(ph, t);
     });
     $("cdDel").addEventListener("click", function(){
       guardDel("حذف الزبون «" + curCust + "»", function(){
@@ -2250,12 +2302,14 @@ function createSync(env){
 /*SYNC-ENGINE-END*/
 
   var FBV = "10.12.2", cloudSync = null, cloudBe = null, devMap = {}, cloudT = null, cloudStartedAt = 0, hbT = null, baseTitle = document.title;
-  var PERMS = [["add","إضافة مبيعات"],["pay","تسجيل تسديدات"],["cust","صفحات الزبائن"],["edit","تعديل الفواتير"],["del","حذف العمليات"],["exp","إصدار فواتير PDF"],["types","تعديل الأنواع"]];
-  var DEF_PERMS = { add: true, pay: true, cust: true, edit: false, del: false, exp: false, types: false };
+  var PERMS = [["add","إضافة مبيعات"],["debt","البيع بالدين"],["disc","منح خصم"],["pay","تسجيل تسديدات"],["cust","صفحات الزبائن"],["hist","رؤية سجل المبيعات السابق (وليس اليوم فقط)"],["edit","تعديل الفواتير"],["del","حذف العمليات"],["exp","إصدار فواتير PDF"],["types","تعديل الأنواع"]];
+  var DEF_PERMS = { add: true, debt: true, disc: false, pay: true, cust: true, hist: false, edit: false, del: false, exp: false, types: false };
+  var LEGACY = { debt: true, disc: true, hist: true };   /* أجهزة قديمة لم تكن تملك هذه المفاتيح: تبقى كما كانت */
+  function permOf(pm, k){ var v = pm ? pm[k] : undefined; if (v === undefined) v = LEGACY[k] !== undefined ? LEGACY[k] : false; return !!v; }
   var FB_RULES = "rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /spaces/{space}/{coll}/{id} {\n      allow read, write: if coll in ['sales','payments','customers','cfg','devices'];\n    }\n    match /spaces/{space}/priv/{m}/{coll}/{id} {\n      allow read, write: if coll in ['purchases','expenses'];\n    }\n  }\n}\n";
   function cloudOn(){ return !!(state.cloud && state.cloud.on); }
   function isMgr(){ return !cloudOn() || !!state.cloud.mgr; }
-  function can(p){ if (isMgr()) return true; var pm = state.cloud.perms || DEF_PERMS; return !!pm[p]; }
+  function can(p){ if (isMgr()) return true; return permOf(state.cloud.perms || DEF_PERMS, p); }
   function rnd(n){ var a = "abcdefghijklmnopqrstuvwxyz0123456789", o = "", b = crypto.getRandomValues(new Uint8Array(n)); for (var i = 0; i < n; i++) o += a[b[i] % 36]; return o; }
   function loadScript(u){ return new Promise(function(res, rej){ var sc = document.createElement("script"); sc.src = u; sc.onload = res; sc.onerror = function(){ rej(new Error("تعذّر تحميل مكتبة Firebase (افتح البرنامج مرة وحدة بالإنترنت)")); }; document.head.appendChild(sc); }); }
   function loadFirebase(){
@@ -2322,7 +2376,7 @@ function createSync(env){
   async function registerDevice(){
     var id = state.cloud.devId, cur = await cloudBe.get(devPath(), id);
     var data = { id: id, name: state.cloud.devName, role: state.cloud.mgr ? "manager" : "worker", seen: new Date().toISOString() };
-    if (!cur && !state.cloud.mgr) data.perms = DEF_PERMS;
+    if (!cur && !state.cloud.mgr) data.perms = state.cloud.perms || DEF_PERMS;
     if (cur && cur.off) data.off = false;
     await cloudBe.setMerge(devPath(), id, data);
   }
@@ -2365,6 +2419,10 @@ function createSync(env){
   function applyRole(){
     var mgr = isMgr(), b = document.body;
     b.setAttribute("data-noedit", can("edit") ? "" : "1"); b.setAttribute("data-nodel", can("del") ? "" : "1"); b.setAttribute("data-noexp", can("exp") ? "" : "1");
+    b.setAttribute("data-nopay", can("pay") ? "" : "1"); b.setAttribute("data-nodebt", can("debt") ? "" : "1"); b.setAttribute("data-nodisc", can("disc") ? "" : "1"); b.setAttribute("data-nohist", can("hist") ? "" : "1");
+    if (!can("debt") && $("payDebt").getAttribute("aria-pressed") === "true") $("payCash").click();
+    if (!can("disc")) { $("disc").value = ""; try { calc(); } catch (e) {} }
+    $("debtsCard").hidden = !(can("pay") || can("exp"));
     $("tb-buy").hidden = !mgr; $("tb-inv").hidden = !mgr; $("tb-debts").hidden = !can("cust");
     Array.prototype.forEach.call(document.querySelectorAll(".mgr-only"), function(e){ e.hidden = !mgr; });
     $("pricingCard").hidden = !can("add");
@@ -2372,6 +2430,7 @@ function createSync(env){
     var cur = "sales"; try { cur = localStorage.getItem("qushoor-tab") || "sales"; } catch (e) {}
     if ($("tb-" + cur) && $("tb-" + cur).hidden) showTab("sales");
     cloudStatus();
+    try { render(); } catch (e) {}
   }
 
   /* ---- رموز الربط ---- */
@@ -2422,7 +2481,7 @@ function createSync(env){
   }
   async function doJoin(o, name){
     var bk = { cloud: state.cloud, cm: state.cm, data: { rows: state.rows, payments: state.payments, customers: state.customers, purchases: state.purchases, expenses: state.expenses, types: state.types } };
-    state.cloud = { on: true, cfg: o.c, space: o.s, mgr: o.m || "", devId: devId(), devName: name, perms: o.m ? {} : DEF_PERMS };
+    state.cloud = { on: true, cfg: o.c, space: o.s, mgr: o.m || "", devId: devId(), devName: name, perms: o.m ? {} : (o.p || DEF_PERMS) };
     state.rows = []; state.payments = []; state.customers = []; state.purchases = []; state.expenses = []; state.cm = {}; state.conflicts = []; persist();
     cloudMsg("جارٍ الاتصال وتحميل البيانات...");
     try { await cloudStart(true, true); }
@@ -2434,10 +2493,19 @@ function createSync(env){
     cloudStop(); state.cloud = { on: false }; state.cm = {}; state.conflicts = []; persist(); applyRole(); renderCloudUi();
     say(forced ? "قام المدير بفصل هذا الجهاز عن المزامنة. بقيت البيانات المحلية على الجهاز." : "تم فصل الجهاز عن المزامنة.");
   }
-  function makeInvite(kind){
-    var o = { c: state.cloud.cfg, s: state.cloud.space, r: kind }; if (kind === "m") o.m = state.cloud.mgr;
+  function buildInvPerms(preset){
+    var box = $("invPermList"); box.innerHTML = "";
+    PERMS.forEach(function(p){
+      var l = document.createElement("label"); l.className = "chk"; var c = document.createElement("input"); c.type = "checkbox"; c.setAttribute("data-ip", p[0]);
+      c.checked = preset === "all" ? true : preset === "none" ? false : !!DEF_PERMS[p[0]];
+      l.appendChild(c); l.appendChild(document.createTextNode(" " + p[1])); box.appendChild(l);
+    });
+  }
+  function makeInvite(kind, perms){
+    var o = { c: state.cloud.cfg, s: state.cloud.space, r: kind }; if (kind === "m") o.m = state.cloud.mgr; else o.p = perms || DEF_PERMS;
     $("invCode").value = codeEnc(o); $("invCodeBox").hidden = false;
-    $("invNote").textContent = kind === "m" ? "⚠️ هذا الرمز يعطي صلاحية المدير الكاملة (الأرباح وأسعار الجملة). أرسله لشخص موثوق فقط." : "أرسل الرمز للعامل، يفتح البرنامج ← الإعدادات ← «③ جهاز عامل» ويلصقه. الصلاحيات تضبطها أنت من قائمة الأجهزة.";
+    var chosen = PERMS.filter(function(p){ return o.p && o.p[p[0]]; }).map(function(p){ return p[1]; }).join("، ") || "لا شيء (عرض فقط)";
+    $("invNote").textContent = kind === "m" ? "⚠️ هذا الرمز يعطي صلاحية المدير الكاملة (الأرباح وأسعار الجملة). أرسله لشخص موثوق فقط." : "أرسل الرمز للعامل، يفتح البرنامج ← الإعدادات ← «③ جهاز عامل» ويلصقه. الصلاحيات الممنوحة له: " + chosen + ". (تقدر تغيّرها لاحقاً من قائمة الأجهزة.)";
     $("invCode").dataset.kind = kind;
   }
 
@@ -2456,7 +2524,7 @@ function createSync(env){
       if (d.role !== "manager" && !d.off) {
         var pm = d.perms || DEF_PERMS;
         PERMS.forEach(function(p){
-          var l = document.createElement("label"); l.className = "chk"; var c = document.createElement("input"); c.type = "checkbox"; c.checked = !!pm[p[0]]; c.setAttribute("data-p", p[0]);
+          var l = document.createElement("label"); l.className = "chk"; var c = document.createElement("input"); c.type = "checkbox"; c.checked = permOf(pm, p[0]); c.setAttribute("data-p", p[0]);
           c.addEventListener("change", function(){
             var np = {}; Array.prototype.forEach.call(card.querySelectorAll("input[data-p]"), function(x){ np[x.getAttribute("data-p")] = x.checked; });
             cloudBe.setMerge(devPath(), id, { perms: np }).then(function(){ cloudMsg("تم حفظ صلاحيات «" + (d.name || id) + "»."); }).catch(function(){ cloudMsg("تعذّر حفظ الصلاحيات (تحقق من الإنترنت)."); });
@@ -2522,10 +2590,17 @@ function createSync(env){
   $("cloudJoin").addEventListener("click", cloudJoin);
   $("cloudNow").addEventListener("click", function(){ if (cloudSync) { cloudMsg("جارٍ المزامنة..."); cloudSync.push().then(function(ok){ cloudMsg(ok ? "تمت المزامنة ✅" : "تعذّرت المزامنة، سيعاد المحاولة تلقائياً."); cloudStatus(); }); } });
   $("cloudLeave").addEventListener("click", function(){ askChoice("فصل هذا الجهاز", "سيتوقف عن المزامنة وتبقى البيانات المحلية. (تعديلاتك غير المرسلة قد لا تصل.)", [{ t: "فصل", cls: "danger", fn: function(){ cloudDisconnect(false); } }, { t: "إلغاء" }]); });
-  $("invW").addEventListener("click", function(){ makeInvite("w"); });
-  $("invM").addEventListener("click", function(){ makeInvite("m"); });
+  $("invW").addEventListener("click", function(){ $("invCodeBox").hidden = true; buildInvPerms("basic"); $("invPermBox").hidden = false; });
+  $("invPermBasic").addEventListener("click", function(){ buildInvPerms("basic"); });
+  $("invPermAll").addEventListener("click", function(){ buildInvPerms("all"); });
+  $("invPermNone").addEventListener("click", function(){ buildInvPerms("none"); });
+  $("invMake").addEventListener("click", function(){
+    var pm = {}; Array.prototype.forEach.call($("invPermList").querySelectorAll("input[data-ip]"), function(x){ pm[x.getAttribute("data-ip")] = x.checked; });
+    makeInvite("w", pm); $("invPermBox").hidden = true;
+  });
+  $("invM").addEventListener("click", function(){ $("invPermBox").hidden = true; makeInvite("m"); });
   $("invCopy").addEventListener("click", function(){ var t = $("invCode"); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand("copy"); } cloudMsg("تم نسخ الرمز."); });
-  $("invWa").addEventListener("click", function(){ var kind = $("invCode").dataset.kind === "m" ? "مدير إضافي" : "عامل"; window.open("https://wa.me/?text=" + encodeURIComponent("رمز ربط جهاز (" + kind + ") ببرنامج قشور الضاهر:\n" + $("invCode").value), "_blank", "noopener"); });
+  $("invWa").addEventListener("click", function(){ var kind = $("invCode").dataset.kind === "m" ? "مدير إضافي" : "عامل"; openWa("", "رمز ربط جهاز (" + kind + ") ببرنامج قشور الضاهر:\n" + $("invCode").value); });
 
   /* ---------- Tabs ---------- */
   var TABS = ["sales", "buy", "debts", "inv", "settings"];
