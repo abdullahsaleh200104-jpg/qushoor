@@ -1,5 +1,5 @@
 /* مركز قشور الضاهر - Service Worker (يعمل بدون إنترنت) */
-var CACHE = "qushoor-v17";
+var CACHE = "qushoor-v18";
 var LOCAL = ["./", "./index.html", "./manifest.json",
   "./icons/icon-180.png", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png",
   "./keys.js", "./lib/xlsx.full.min.js", "./lib/jspdf.umd.min.js"];

@@ -523,9 +523,9 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
 
   <div class="tabpanel" id="tab-settings" hidden>
   <section class="card mgr-only" id="licCard" aria-label="الترخيص">
-    <div class="head"><h2>🔑 الترخيص</h2></div>
+    <div class="head"><h2>🔑 ميزات خاصة بالزبون (اختياري)</h2></div>
     <div id="licInfo" class="tip" style="line-height:1.9"></div>
-    <label style="margin-top:8px">تحديث الترخيص (كود جديد من المطوّر لإضافة/تعديل ميزات)<textarea id="licNew" rows="3" placeholder="L2...."></textarea></label>
+    <label style="margin-top:8px">كود الميزات الخاصة (يعطيك إياه المطوّر؛ البرنامج يعمل بدونه)<textarea id="licNew" rows="3" placeholder="L2...."></textarea></label>
     <button id="licUpd" type="button" class="small" style="margin-top:6px">تطبيق الكود</button>
     <p class="msg" id="licMsg" role="status"></p>
   </section>
@@ -770,7 +770,14 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
     prices: {}, rows: [], selected: "", mode: "qty", unit: "kg", isDebt: false, users: [], seasons: [], seasonStart: "", payments: [], delMode: "admin", sync: { url: "", key: "", auto: false }, autoXl: { on: false, last: 0 }, purchases: [], expenses: [], shamQR: "", shamInfo: "", customers: [], warnDup: true, resetWa: "", bk: { on: false, pass: "", h: 0, ts: "" }, cloud: { on: false }, cm: {}, conflicts: []
   };
   try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s && s.types) state = Object.assign(state, s); } catch (e) {}
-  state.bk = state.bk || { on: false, pass: "", h: 0, ts: "" }; state.cm = state.cm || {}; state.conflicts = state.conflicts || []; state.cloud = state.cloud || { on: false }; state.customers = state.customers || []; state.purchases = state.purchases || []; state.expenses = state.expenses || []; state.payments = state.payments || []; state.seasons = state.seasons || [];
+  state.bk = state.bk || { on: false, pass: "", h: 0, ts: "" };
+  var ACC_EPOCH = (typeof window.QS_ACCOUNTS_EPOCH === "number") ? window.QS_ACCOUNTS_EPOCH : 1;
+  if ((state.accEpoch || 0) < ACC_EPOCH) {
+    var hadUsers = !!(state.users && state.users.length);
+    state.users = []; delete state.resetCh; state.accEpoch = ACC_EPOCH; if (hadUsers) state.accWiped = true;
+    persist();
+  }
+  state.cm = state.cm || {}; state.conflicts = state.conflicts || []; state.cloud = state.cloud || { on: false }; state.customers = state.customers || []; state.purchases = state.purchases || []; state.expenses = state.expenses || []; state.payments = state.payments || []; state.seasons = state.seasons || [];
   var syncT = null;
   function persist(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
   function save(){ persist(); if (state.cloud && state.cloud.on) cloudKick(); try { bkKick(); } catch (e) {}
@@ -894,9 +901,10 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
   function unlock(L){
     lic = L; licensed = true; licName = L.name;
     $("gate").hidden = true; $("appWrap").hidden = false;
-    $("licLine").textContent = "مرخّص لـ: " + L.name;
+    $("licLine").textContent = L.name ? "مرخّص لـ: " + L.name : "";
     try { cloudBoot(); } catch (e) {}
     try { licInfoRender(); loadPlugin(); bkAfterUnlock(); } catch (e) {}
+    try { accWipeNotice(); } catch (e) {}
   }
   async function checkLicense(){
     var id = getDeviceId();
@@ -907,11 +915,11 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
       return;
     }
     var saved = ""; try { saved = localStorage.getItem(LKEY) || ""; } catch (e) {}
-    var L = saved ? await verifyLicense(saved, id) : null;
-    if (L) { unlock(L); return; }
-    $("gate").hidden = false;
-    if (saved) $("gateErr").textContent = "انتهت صلاحية كود التفعيل القديم. أرسل رقم جهازك للمطوّر ليُصدر لك كوداً جديداً. بياناتك محفوظة على هذا الجهاز ولن تُمسح.";
+    if (!saved) { unlock(OPEN_LIC); return; }          /* لا يوجد كود تفعيل: يعمل مباشرة بكل الميزات */
+    var L = await verifyLicense(saved, id);
+    unlock(L || OPEN_LIC);                              /* كود ميزات خاصة (اختياري) إن كان صالحاً، وإلا نسخة مفتوحة */
   }
+  var OPEN_LIC = { v: 0, name: "", f: null, cid: "", s: 0 };
   $("activate").addEventListener("click", async function(){
     var id = getDeviceId(), code = $("codeIn").value;
     if (!code.trim()) { $("gateErr").textContent = "الصق رمز التفعيل أولاً."; return; }
@@ -1119,7 +1127,7 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
     var out = salesAoa(state.rows), sT = 0, sD = 0, sA = 0, sP = 0, sR = 0;
     state.rows.forEach(function(x){ sT += x.tons; sD += (x.disc || 0); sA += x.amount; sP += (x.paid || 0); sR += (x.remaining || 0); });
     out.push(["", "", "", "", "المجموع", "", r(sT, 5), r(sD), r(sA), r(sP), r(sR)]);
-    out.push([]); out.push(["مرخّص لـ: " + licName + " | برمجة د. عبدالله صالح - جميع الحقوق محفوظة"]);
+    out.push([]); out.push([(licName ? "مرخّص لـ: " + licName + " | " : "") + "برمجة د. عبدالله صالح - جميع الحقوق محفوظة"]);
     return out;
   }
 
@@ -1168,7 +1176,7 @@ body[data-nofx~="excel"] #export,body[data-nofx~="excel"] #copy,body[data-nofx~=
       [["جرد يومي","day"],["جرد أسبوعي","week"],["جرد شهري","month"],["جرد الموسم","season"],["جرد مخصص","manual"]].forEach(function(p){ invSheets.push(p); names.push(p[0]); });
       names.push("المواسم"); names.push("المشتريات"); names.push("المصروفات");
     }
-    var home = [["مركز قشور الضاهر"], ["مرخّص لـ: " + licName + " | " + today()], [], ["🔎 البحث: اكتب في الخانة المجاورة (فارغة = الكل)"],
+    var home = [["مركز قشور الضاهر"], [(licName ? "مرخّص لـ: " + licName + " | " : "") + today()], [], ["🔎 البحث: اكتب في الخانة المجاورة (فارغة = الكل)"],
       ["اسم الزبون (أو جزء منه) ◄", ""], ["إجمالي مشترياته ($)", 0], ["إجمالي ما دفعه ($)", 0], ["إجمالي الدين عليه ($)", 0], [],
       ["الصنف (أو جزء منه) ◄", ""], ["الكمية المباعة (طن)", 0], ["المبلغ ($)", 0], ["الدين فيه ($)", 0], [],
       ["الإجماليات"], ["إجمالي المبيعات بعد الخصم ($)", 0], ["إجمالي الديون ($)", 0], [], ["الأوراق (اضغط للانتقال):"]];
@@ -2729,11 +2737,15 @@ function createSync(env){
   function runHooks(n){ var a = QSH && QSH[n]; if (a) a.forEach(function(f){ try { f(); } catch (e) { console.error(e); } }); }
   var FEATN = { cust: "صفحات الزبائن والديون", buy: "الوارد والأرباح", inv: "الجرد والمواسم", cloud: "ربط الأجهزة", excel: "تصدير إكسل", pdf: "فواتير PDF", sham: "شام كاش", backup: "نسخ احتياطي سحابي" };
   var pluginState = "";
+  function accWipeNotice(){
+    if (!state.accWiped) return; delete state.accWiped; persist();
+    askChoice("🔐 تحديث نظام الحسابات", "تم تصفير جميع أسماء المستخدمين وكلمات السر القديمة (بما فيها حساب المدير). أنشئ الآن حساب المدير الجديد: اسم مستخدم + كلمة سر + رقم واتساب، من تبويب «الجرد». بياناتك ومبيعاتك لم تتأثر.", [{ t: "إنشاء حساب المدير الآن", cls: "primary", fn: function(){ showTab("inv"); } }, { t: "لاحقاً" }]);
+  }
   function licInfoRender(){
     var el = $("licInfo"); if (!el) return;
     var fl = lic.f ? lic.f.map(function(k){ return FEATN[k] || k; }).join("، ") : "كل الميزات";
     el.innerHTML = "";
-    [["الاسم", lic.name], ["رقم الزبون", lic.cid || "—"], ["نوع الترخيص", lic.v === 2 ? "v2 (ميزات مخصصة)" : "v1 (قديم)"], ["الميزات", fl], ["إضافات خاصة بك", pluginState || "لا يوجد"], ["رقم هذا الجهاز", getDeviceId()], ["بصمة مفتاح keys.js", kidOf(window.QS_PUB2)]].forEach(function(r){
+    [["الاسم", lic.name || "نسخة مفتوحة (بدون كود تفعيل)"], ["رقم الزبون", lic.cid || "—"], ["النوع", lic.v === 2 ? "ميزات خاصة (كود)" : "مفتوح لكل الميزات"], ["الميزات", fl], ["إضافات خاصة بك", pluginState || "لا يوجد"], ["رقم هذا الجهاز", getDeviceId()], ["بصمة مفتاح keys.js", kidOf(window.QS_PUB2)]].forEach(function(r){
       var d = document.createElement("div"); d.textContent = r[0] + ": " + r[1]; el.appendChild(d);
     });
   }
